@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LIFELOCKER</title>
+  <style>
+    /* Dark Theme Minimalist */
+    :root {
+      --bg: #111215;
+      --card: #18191f;
+      --border: #26272e;
+      --border-hover: #383a45;
+      --text: #e6e8ec;
+      --text-muted: #8c909e;
+      --text-dim: #5c606e;
+      --btn-bg: #e6e8ec;
+      --btn-text: #111215;
+      --alert-bg: #211c15;
+      --alert-border: #4a3b22;
+      --alert-text: #f59e0b;
+      --summary-bg: #131b26;
+      --summary-border: #1e3a5f;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      padding: 36px 20px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 880px;
+      margin: 0 auto;
+    }
+
+    /* Minimalist Header */
+    header {
+      padding-bottom: 18px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--text);
+    }
+
+    .subtext {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Tab Switcher */
+    .tab-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid transparent;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+      background: var(--card);
+    }
+
+    .tab-btn.active {
+      color: #fff;
+      background: #22242c;
+      border-color: var(--border-hover);
+    }
+
+    /* Views */
+    .view-panel {
+      display: none;
+    }
+    .view-panel.active {
+      display: block;
+    }
+
+    /* Consequence Reasoning Warning Banner */
+    .consequence-banner {
+      display: none;
+      background: var(--alert-bg);
+      border: 1px solid var(--alert-border);
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+    }
+
+    .banner-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--alert-text);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .banner-desc {
+      font-size: 12px;
+      color: #d1d5db;
+      line-height: 1.6;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .scan-btn {
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 9px 18px;
+      border: 1px solid var(--btn-bg);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    .scan-btn:hover {
+      opacity: 0.9;
+    }
+
+    .scan-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .status-badge {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-left: auto;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+    }
+
+    /* Terminal Scanning Log */
+    .log-container {
+      margin-bottom: 28px;
+    }
+
+    .log-header {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    #logBox {
+      background: #0b0c0e;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #9ca3af;
+      height: 120px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    /* To-Do Section */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .count-indicator {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .todo-list, .email-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .todo-row, .email-row {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px 16px;
+      transition: border-color 0.15s ease;
+    }
+
+    .todo-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .todo-row:hover, .email-row:hover {
+      border-color: var(--border-hover);
+    }
+
+    .todo-row.top-priority {
+      border-color: rgba(245, 158, 11, 0.4);
+      background: #1c1a17;
+    }
+
+    .todo-row.done {
+      opacity: 0.45;
+    }
+
+    .todo-row.done .task-name {
+      text-decoration: line-through;
+    }
+
+    .todo-body, .email-body-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .task-header, .email-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+
+    .task-name, .email-subject {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .task-date, .email-date {
+      font-size: 12px;
+      font-weight: 500;
+      color: #93c5fd;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      white-space: nowrap;
+    }
+
+    .email-date {
+      color: var(--text-dim);
+    }
+
+    .consequence {
+      font-size: 12px;
+      color: #d1a153;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    .snippet-text {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+
+    .meta-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .source-link {
+      color: #60a5fa;
+      text-decoration: none;
+    }
+
+    .source-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Buttons */
+    .button-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-action {
+      background: #202228;
+      color: #cbd5e1;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn-action:hover {
+      background: #2a2c36;
+      border-color: var(--border-hover);
+      color: #fff;
+    }
+
+    .btn-done {
+      color: #34d399;
+    }
+    .btn-done:hover {
+      border-color: #059669;
+    }
+
+    .btn-skip {
+      color: #94a3b8;
+    }
+    .btn-skip:hover {
+      border-color: #64748b;
+    }
+
+    .btn-summary {
+      color: #38bdf8;
+    }
+    .btn-summary:hover {
+      border-color: #0284c7;
+    }
+
+    .btn-delete {
+      color: #f87171;
+    }
+    .btn-delete:hover {
+      border-color: #ef4444;
+      background: #2a1b1d;
+    }
+
+    .btn-cal {
+      color: #38bdf8;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .btn-cal:hover {
+      border-color: #0284c7;
+      color: #7dd3fc;
+    }
+
+    /* Action CTA Link Button in Todo */
+    .action-cta-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #10b981;
+      background: #0f291e;
+      border: 1px solid #10b98144;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .action-cta-link:hover {
+      background: #153e2d;
+      border-color: #10b981;
+      color: #34d399;
+      text-decoration: none;
+    }
+
+    /* Manual Input Section */
+    .task-input-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+
+    .task-input-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .task-input-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .input-field {
+      background: #111215;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      padding: 7px 12px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .input-field:focus {
+      border-color: var(--border-hover);
+    }
+    .input-field::placeholder {
+      color: var(--text-dim);
+    }
+
+    .input-main {
+      flex: 1;
+    }
+    .input-date {
+      width: 170px;
+    }
+    .input-category {
+      width: 120px;
+      background: #111215;
+      color: var(--text);
+    }
+
+    .btn-add {
+      background: #2a2c36;
+      color: var(--text);
+      border: 1px solid var(--border-hover);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 16px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s ease;
+    }
+    .btn-add:hover {
+      background: #383a45;
+      color: #fff;
+    }
+
+    .priority-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 1px 6px;
+      border-radius: 3px;
+      margin-left: 8px;
+    }
+
+    /* Full Email Reader Box */
+    .email-full-body {
+      display: none;
+      background: #0d0e12;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px;
+      margin-top: 10px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      max-height: 350px;
+      overflow-y: auto;
+    }
+
+    /* Summary Box */
+    .summary-card {
+      display: none;
+      background: var(--summary-bg);
+      border: 1px solid var(--summary-border);
+      border-radius: 4px;
+      padding: 12px 14px;
+      margin-top: 10px;
+      font-size: 12px;
+      color: #bae6fd;
+    }
+
+    .summary-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .summary-card ul {
+      margin-top: 6px;
+      padding-left: 18px;
+      color: #93c5fd;
+    }
+
+    .summary-card li {
+      margin-bottom: 2px;
+    }
+
+    .empty-state {
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      padding: 32px 16px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Minimal Header -->
+  <header>
+    <div>
+      <h1>LIFELOCKER</h1>
+      <div class="subtext">Personal Email Intelligence & Consequence Engine</div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="tab-bar">
+    <button id="tabTasks" class="tab-btn active" onclick="switchTab('tasks')">To-Do Tasks</button>
+    <button id="tabEmails" class="tab-btn" onclick="switchTab('emails')">See Mails</button>
+  </div>
+
+  <!-- TAB 1: TO-DO TASKS -->
+  <div id="panelTasks" class="view-panel active">
+    <!-- Cross-Email Consequence Alert Banner -->
+    <div id="consequenceBanner" class="consequence-banner">
+      <div id="bannerTitle" class="banner-title">⚠️ High Consequence Conflict Detected</div>
+      <div id="bannerDesc" class="banner-desc">Analyzing cross-email dependencies...</div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button id="scanBtn" class="scan-btn" onclick="startScan()">What Am I Forgetting?</button>
+      <div id="statusText" class="status-badge">Status: Ready</div>
+    </div>
+
+    <!-- Add Custom Task Section -->
+    <div class="task-input-card">
+      <div class="task-input-title">
+        <span>Add To-Do Task</span>
+        <span style="font-size: 11px; color: var(--text-dim); font-weight: 400;">Analyzed alongside emails during scan</span>
+      </div>
+      <form class="task-input-form" onsubmit="event.preventDefault(); addManualTask();">
+        <div class="input-row">
+          <input id="manualAction" class="input-field input-main" type="text" placeholder="What do you need to do? (e.g. Apply for passport renewal, Pay rent)" required />
+          <input id="manualDate" class="input-field input-date" type="text" placeholder="Deadline (optional)" />
+          <select id="manualCategory" class="input-field input-category">
+            <option value="personal">Personal</option>
+            <option value="travel">Travel</option>
+            <option value="health">Health</option>
+            <option value="finance">Finance</option>
+            <option value="project">Project</option>
+            <option value="hackathon">Hackathon</option>
+            <option value="work">Work</option>
+          </select>
+          <button type="submit" class="btn-add">+ Add Task</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Realtime Scan Process Log -->
+    <div class="log-container">
+      <div class="log-header">Scan Process (Top 5 Emails)</div>
+      <div id="logBox">Press &quot;What Am I Forgetting?&quot; to scan top 5 inbox emails.</div>
+    </div>
+
+    <!-- Priority Sorted Tasks -->
+    <div class="section-header">
+      <div class="section-title">Prioritized To-Do List</div>
+      <div id="itemCount" class="count-indicator">0 items</div>
+    </div>
+
+    <div id="todoContainer" class="todo-list">
+      <!-- Tasks populated dynamically -->
+    </div>
+  </div>
+
+  <!-- TAB 2: SEE MAILS -->
+  <div id="panelEmails" class="view-panel">
+    <div class="section-header">
+      <div class="section-title">Inbox Messages</div>
+      <button class="btn-action" onclick="loadEmails()">⟳ Refresh Mails</button>
+    </div>
+
+    <div id="emailContainer" class="email-list">
+      <!-- Emails populated dynamically -->
+      <div class="empty-state">Loading your emails...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let isScanning = false;
+  let cachedEmails = [];
+
+  // Tab switching
+  function switchTab(tab) {
+    document.getElementById('tabTasks').classList.toggle('active', tab === 'tasks');
+    document.getElementById('tabEmails').classList.toggle('active', tab === 'emails');
+    document.getElementById('panelTasks').classList.toggle('active', tab === 'tasks');
+    document.getElementById('panelEmails').classList.toggle('active', tab === 'emails');
+
+    if (tab === 'emails' && cachedEmails.length === 0) {
+      loadEmails();
+    }
+  }
+
+  // --- Load To-Dos ---
+  async function loadTodos() {
+    try {
+      const res = await fetch('/api/todos');
+      const data = await res.json();
+      renderAll(data.todos || [], data.consequence_alert);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function renderAll(todos, alert) {
+    const banner = document.getElementById('consequenceBanner');
+    const bTitle = document.getElementById('bannerTitle');
+    const bDesc = document.getElementById('bannerDesc');
+
+    if (alert && alert.has_conflict && alert.alert_title) {
+      banner.style.display = 'block';
+      bTitle.textContent = '⚠️ ' + alert.alert_title;
+      bDesc.textContent = alert.alert_explanation || '';
+    } else {
+      banner.style.display = 'none';
+    }
+
+    const container = document.getElementById('todoContainer');
+    const countText = document.getElementById('itemCount');
+    countText.textContent = `${todos.length} ${todos.length === 1 ? 'item' : 'items'}`;
+    container.innerHTML = '';
+
+    if (todos.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          No actionable obligations found. Click &quot;What Am I Forgetting?&quot; to scan your inbox.
+        </div>
+      `;
+      return;
+    }
+
+    todos.forEach((t) => {
+      const row = document.createElement('div');
+      const isTop = t.priority === 1;
+      const isManual = t.source_type === 'manual';
+      row.className = `todo-row ${t.status === 'done' ? 'done' : ''} ${isTop ? 'top-priority' : ''}`;
+
+      const dateStr = t.date_time || t.sort_date || 'No Date';
+      const consequenceHtml = t.consequence ? `<div class="consequence">Impact: ${escapeHtml(t.consequence)}</div>` : '';
+      const emailLink = t.gmail_link ? `<a href="${t.gmail_link}" target="_blank" class="source-link">Open Email ↗</a>` : '';
+      const senderHtml = t.source_sender ? `<span>From: ${escapeHtml(t.source_sender)}</span>` : '';
+      const priorityBadge = isTop ? `<span class="priority-badge">TOP PRIORITY</span>` : '';
+      const tagBadge = isManual ? `<span style="font-size: 10px; color: #a5b4fc; background: #1e1b4b; border: 1px solid #4338ca; padding: 1px 6px; border-radius: 3px; margin-left: 6px;">Manual Task</span>` : '';
+
+      // Actionable useful link button (e.g. "Pay Now", "Fill Form", "Confirm Slot")
+      let actionBtnHtml = '';
+      if (t.action_url) {
+        const ctaText = t.action_url_text || 'Take Action';
+        actionBtnHtml = `
+          <div style="margin-top: 8px;">
+            <a href="${escapeHtml(t.action_url)}" target="_blank" class="action-cta-link">
+              🔗 ${escapeHtml(ctaText)} ↗
+            </a>
+          </div>
+        `;
+      }
+
+      row.innerHTML = `
+        <div class="todo-body">
+          <div class="task-header">
+            <span class="task-name">${escapeHtml(t.action)} ${priorityBadge} ${tagBadge}</span>
+            <span class="task-date">${escapeHtml(dateStr)}</span>
+          </div>
+
+          ${consequenceHtml}
+          ${actionBtnHtml}
+
+          <div class="meta-bar">
+            ${senderHtml}
+            ${emailLink}
+          </div>
+        </div>
+
+        <div class="button-group">
+          ${getCalendarButtonHtml(t)}
+          <button class="btn-action btn-done" onclick="markDone(${t.id})">
+            ${t.status === 'done' ? 'Undo' : 'Done'}
+          </button>
+          <button class="btn-action btn-skip" onclick="skipItem(${t.id})">
+            Skip
+          </button>
+          <button class="btn-action btn-delete" title="Delete task" onclick="deleteTask(${t.id})">
+            ✕
+          </button>
+        </div>
+      `;
+
+      container.appendChild(row);
+    });
+  }
+
+  // --- Google Calendar Link Generator ---
+  function getCalendarButtonHtml(t) {
+    const rawDate = t.sort_date || t.date_time || '';
+    if (!rawDate || rawDate === '9999-99-99' || rawDate === 'No Date') {
+      return '';
+    }
+
+    let startIso = '';
+    let endIso = '';
+
+    // Matches YYYY-MM-DDTHH:MM or YYYY-MM-DD
+    const isoMatch = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+    if (isoMatch) {
+      const year = isoMatch[1];
+      const month = isoMatch[2];
+      const day = isoMatch[3];
+      const hour = isoMatch[4];
+      const min = isoMatch[5];
+
+      if (hour && min) {
+        startIso = `${year}${month}${day}T${hour}${min}00`;
+        // End time + 1 hour later
+        let endHourNum = parseInt(hour, 10) + 1;
+        let endDayNum = parseInt(day, 10);
+        if (endHourNum >= 24) {
+          endHourNum = endHourNum - 24;
+          endDayNum += 1;
+        }
+        const pad = (n) => String(n).padStart(2, '0');
+        endIso = `${year}${month}${pad(endDayNum)}T${pad(endHourNum)}${min}00`;
+      } else {
+        // All-day event
+        startIso = `${year}${month}${day}`;
+        const nextDayNum = parseInt(day, 10) + 1;
+        const pad = (n) => String(n).padStart(2, '0');
+        endIso = `${year}${month}${pad(nextDayNum)}`;
+      }
+    } else {
+      // Fallback: try JS Date parser
+      const parsed = Date.parse(rawDate);
+      if (!isNaN(parsed)) {
+        const d = new Date(parsed);
+        const pad = (n) => String(n).padStart(2, '0');
+        startIso = `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+        const dEnd = new Date(parsed + 60 * 60 * 1000);
+        endIso = `${dEnd.getUTCFullYear()}${pad(dEnd.getUTCMonth() + 1)}${pad(dEnd.getUTCDate())}T${pad(dEnd.getUTCHours())}${pad(dEnd.getUTCMinutes())}00Z`;
+      } else {
+        return '';
+      }
+    }
+
+    const title = encodeURIComponent(t.action || 'LIFELOCKER Task');
+    let details = `Created by LIFELOCKER\nCategory: ${t.category || 'personal'}`;
+    if (t.consequence) details += `\nConsequence if missed: ${t.consequence}`;
+    if (t.gmail_link) details += `\nSource Email: ${t.gmail_link}`;
+    if (t.action_url) details += `\nAction URL: ${t.action_url}`;
+    const encDetails = encodeURIComponent(details);
+
+    const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startIso}/${endIso}&details=${encDetails}`;
+
+    return `
+      <a href="${calUrl}" target="_blank" class="btn-action btn-cal" title="Add to Google Calendar">
+        📅 Cal
+      </a>
+    `;
+  }
+
+  // --- Realtime Scan ---
+  function startScan() {
+    if (isScanning) return;
+    isScanning = true;
+
+    const btn = document.getElementById('scanBtn');
+    const logBox = document.getElementById('logBox');
+    const status = document.getElementById('statusText');
+
+    btn.disabled = true;
+    btn.textContent = 'Scanning Top 5...';
+    status.textContent = 'Status: Evaluating emails';
+    logBox.textContent = 'Connecting to Gmail...\n';
+
+    const es = new EventSource('/api/scan-stream');
+
+    es.onmessage = function(e) {
+      const data = JSON.parse(e.data);
+
+      if (data.type === 'log') {
+        logBox.textContent += data.text + '\n';
+        logBox.scrollTop = logBox.scrollHeight;
+      } else if (data.type === 'error') {
+        logBox.textContent += '[Error] ' + data.text + '\n';
+        es.close();
+        finish(false);
+      } else if (data.type === 'done') {
+        logBox.textContent += `\nScan complete. Isolated ${data.found_count} task(s).\n`;
+        logBox.scrollTop = logBox.scrollHeight;
+        es.close();
+        finish(true);
+        renderAll(data.todos || [], data.consequence_alert);
+      }
+    };
+
+    es.onerror = function() {
+      es.close();
+      finish(false);
+    };
+  }
+
+  function finish(ok) {
+    isScanning = false;
+    const btn = document.getElementById('scanBtn');
+    const status = document.getElementById('statusText');
+    btn.disabled = false;
+    btn.textContent = 'What Am I Forgetting?';
+    status.textContent = ok ? 'Status: Complete' : 'Status: Ready';
+  }
+
+  async function markDone(id) {
+    const res = await fetch(`/api/todos/${id}/complete`, { method: 'POST' });
+    const data = await res.json();
+    renderAll(data.todos || [], data.consequence_alert);
+  }
+
+  async function skipItem(id) {
+    const res = await fetch(`/api/todos/${id}/skip`, { method: 'POST' });
+    const data = await res.json();
+    renderAll(data.todos || [], data.consequence_alert);
+  }
+
+  async function deleteTask(id) {
+    if (!confirm('Delete this task?')) return;
+    const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    renderAll(data.todos || [], data.consequence_alert);
+  }
+
+  async function addManualTask() {
+    const actionInput = document.getElementById('manualAction');
+    const dateInput = document.getElementById('manualDate');
+    const catInput = document.getElementById('manualCategory');
+
+    const action = actionInput.value.trim();
+    if (!action) return;
+
+    const date_time = dateInput.value.trim();
+    const category = catInput.value;
+
+    try {
+      const res = await fetch('/api/todos/manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, date_time, category })
+      });
+      const data = await res.json();
+      actionInput.value = '';
+      dateInput.value = '';
+      renderAll(data.todos || [], data.consequence_alert);
+    } catch (e) {
+      alert('Failed to add task: ' + e.message);
+    }
+  }
+
+  // --- See Mails Feature ---
+  async function loadEmails() {
+    const container = document.getElementById('emailContainer');
+    container.innerHTML = '<div class="empty-state">Loading your inbox messages...</div>';
+
+    try {
+      const res = await fetch('/api/emails?limit=12');
+      const data = await res.json();
+      cachedEmails = data.emails || [];
+      renderEmails(cachedEmails);
+    } catch (e) {
+      container.innerHTML = `<div class="empty-state">Failed to load emails: ${e.message}</div>`;
+    }
+  }
+
+  function renderEmails(emails) {
+    const container = document.getElementById('emailContainer');
+    container.innerHTML = '';
+
+    if (emails.length === 0) {
+      container.innerHTML = '<div class="empty-state">No recent emails found in your inbox.</div>';
+      return;
+    }
+
+    emails.forEach((mail) => {
+      const row = document.createElement('div');
+      row.className = 'email-row';
+
+      row.innerHTML = `
+        <div class="email-body-content">
+          <div class="email-header">
+            <span class="email-subject">${escapeHtml(mail.subject)}</span>
+            <span class="email-date">${escapeHtml(mail.date || '')}</span>
+          </div>
+
+          <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 6px;">
+            From: ${escapeHtml(mail.sender)}
+          </div>
+
+          <div class="snippet-text">
+            ${escapeHtml(mail.snippet)}
+          </div>
+
+          <!-- Summary Box (Populated on click) -->
+          <div id="summary-${mail.id}" class="summary-card"></div>
+
+          <!-- Full Body Viewer (Toggled on click) -->
+          <div id="body-${mail.id}" class="email-full-body">${escapeHtml(mail.body)}</div>
+
+          <div class="meta-bar">
+            <a href="${mail.gmail_link}" target="_blank" class="source-link">Open in Gmail ↗</a>
+
+            <div style="margin-left: auto; display: flex; gap: 6px;">
+              <button class="btn-action btn-summary" onclick="summarizeEmail('${mail.id}')">
+                ✨ Summarize
+              </button>
+              <button id="toggleBtn-${mail.id}" class="btn-action" onclick="toggleReadEmail('${mail.id}')">
+                Read Email
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      container.appendChild(row);
+    });
+  }
+
+  function toggleReadEmail(id) {
+    const bodyBox = document.getElementById(`body-${id}`);
+    const btn = document.getElementById(`toggleBtn-${id}`);
+    const isVisible = bodyBox.style.display === 'block';
+
+    bodyBox.style.display = isVisible ? 'none' : 'block';
+    btn.textContent = isVisible ? 'Read Email' : 'Collapse';
+  }
+
+  async function summarizeEmail(id) {
+    const summaryBox = document.getElementById(`summary-${id}`);
+    const email = cachedEmails.find(e => e.id === id);
+    if (!email) return;
+
+    summaryBox.style.display = 'block';
+    summaryBox.innerHTML = '<div class="summary-title">Generating summary with AI...</div>';
+
+    try {
+      const res = await fetch('/api/emails/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: email.id,
+          subject: email.subject,
+          body: email.body
+        })
+      });
+
+      const data = await res.json();
+      const pointsHtml = (data.key_points && data.key_points.length > 0)
+        ? `<ul>${data.key_points.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>`
+        : '';
+
+      summaryBox.innerHTML = `
+        <div class="summary-title">📌 Summary (AI Generated):</div>
+        <div>${escapeHtml(data.summary)}</div>
+        ${pointsHtml}
+      `;
+    } catch (e) {
+      summaryBox.innerHTML = `<div class="summary-title" style="color: #ef4444;">Error generating summary: ${e.message}</div>`;
+    }
+  }
+
+  function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Initial load
+  loadTodos();
+</script>
+
+</body>
+</html>
