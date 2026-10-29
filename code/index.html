@@ -5,22 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LIFELOCKER</title>
   <style>
-    /* Dark Theme Minimalist */
     :root {
-      --bg: #111215;
-      --card: #18191f;
-      --border: #26272e;
-      --border-hover: #383a45;
-      --text: #e6e8ec;
-      --text-muted: #8c909e;
-      --text-dim: #5c606e;
-      --btn-bg: #e6e8ec;
-      --btn-text: #111215;
-      --alert-bg: #211c15;
-      --alert-border: #4a3b22;
-      --alert-text: #f59e0b;
-      --summary-bg: #131b26;
-      --summary-border: #1e3a5f;
+      --bg: #030406;
+      --card: #12141d;
+      --card-hover: #181b26;
+      --border: #1e2230;
+      --border-hover: #31374a;
+      --text: #edf0f5;
+      --text-muted: #8b92a4;
+      --text-dim: #4e5465;
+      --btn-bg: #edf0f5;
+      --btn-text: #0c0d10;
+      --alert-bg: #1c1815;
+      --alert-border: #3b3022;
+      --alert-text: #eab308;
+      --primary: #3b82f6;
+      --primary-hover: #60a5fa;
     }
 
     * {
@@ -32,21 +32,37 @@
     body {
       background-color: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
       min-height: 100vh;
-      padding: 36px 20px;
+      padding: 40px 24px 100px;
       line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+    }
+
+    /* Deep Obsidian Backdrop - Maximum Focus on Tasks */
+    .ambient-backdrop {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+      background: radial-gradient(ellipse 95% 75% at 50% 0%, #080a10 0%, #030406 80%);
     }
 
     .container {
-      max-width: 880px;
+      max-width: 860px;
       margin: 0 auto;
+      position: relative;
+      z-index: 1;
     }
 
     /* Minimalist Header */
     header {
-      padding-bottom: 18px;
-      margin-bottom: 20px;
+      padding-bottom: 20px;
+      margin-bottom: 22px;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
@@ -54,14 +70,14 @@
     }
 
     h1 {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 700;
-      letter-spacing: 1px;
+      letter-spacing: 0.8px;
       color: var(--text);
     }
 
     .subtext {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--text-muted);
       margin-top: 2px;
     }
@@ -69,8 +85,8 @@
     /* Tab Switcher */
     .tab-bar {
       display: flex;
-      gap: 8px;
-      margin-bottom: 24px;
+      gap: 6px;
+      margin-bottom: 26px;
       border-bottom: 1px solid var(--border);
       padding-bottom: 10px;
     }
@@ -81,7 +97,7 @@
       border: 1px solid transparent;
       border-radius: 4px;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 500;
       padding: 6px 14px;
       cursor: pointer;
       transition: all 0.15s ease;
@@ -93,8 +109,8 @@
     }
 
     .tab-btn.active {
-      color: #fff;
-      background: #22242c;
+      color: var(--text);
+      background: #1a1d26;
       border-color: var(--border-hover);
     }
 
@@ -106,29 +122,26 @@
       display: block;
     }
 
-    /* Consequence Reasoning Warning Banner */
+    /* Conflict Warning Banner */
     .consequence-banner {
       display: none;
       background: var(--alert-bg);
       border: 1px solid var(--alert-border);
       border-radius: 6px;
-      padding: 14px 18px;
+      padding: 14px 16px;
       margin-bottom: 24px;
     }
 
     .banner-title {
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 600;
       color: var(--alert-text);
       margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
 
     .banner-desc {
       font-size: 12px;
-      color: #d1d5db;
+      color: #cbd5e1;
       line-height: 1.6;
     }
 
@@ -137,24 +150,24 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
 
     .scan-btn {
-      background: var(--btn-bg);
-      color: var(--btn-text);
+      background: #2563eb;
+      color: #fff;
       font-family: inherit;
       font-size: 13px;
-      font-weight: 600;
-      padding: 9px 18px;
-      border: 1px solid var(--btn-bg);
-      border-radius: 6px;
+      font-weight: 500;
+      padding: 8px 18px;
+      border: 1px solid transparent;
+      border-radius: 5px;
       cursor: pointer;
-      transition: opacity 0.15s ease;
+      transition: background 0.15s ease, transform 0.1s ease;
     }
 
     .scan-btn:hover {
-      opacity: 0.9;
+      background: #3b82f6;
     }
 
     .scan-btn:disabled {
@@ -164,9 +177,44 @@
 
     .status-badge {
       font-size: 12px;
-      color: var(--text-muted);
+      color: var(--text-dim);
       margin-left: auto;
-      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .scan-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .scan-scope-select {
+      background: #11131a;
+      color: #cbd5e1;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 7px 11px;
+      cursor: pointer;
+      color-scheme: dark;
+      transition: border-color 0.15s ease, background 0.15s ease;
+      outline: none;
+    }
+
+    .scan-scope-select:hover {
+      border-color: var(--border-hover);
+      background: #151821;
+    }
+
+    .scan-scope-select:focus {
+      border-color: var(--primary);
+    }
+
+    .scan-scope-select:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
     /* Terminal Scanning Log */
@@ -178,37 +226,186 @@
       font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
       color: var(--text-dim);
       margin-bottom: 6px;
     }
 
+    /* Gemini Active Glow for Inbox Scan Log */
+    @property --gemini-angle {
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
+    }
+
+    .log-box-wrapper {
+      position: relative;
+      border-radius: 8px;
+      background: transparent;
+    }
+
+    /* Heavy blurred ambient aura (pseudo-element ::before) */
+    .log-box-wrapper::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 9px;
+      background: conic-gradient(
+        from var(--gemini-angle, 0deg),
+        #2563eb 0deg,
+        #7c3aed 70deg,
+        #c084fc 140deg,
+        #38bdf8 200deg,
+        transparent 280deg,
+        #2563eb 360deg
+      );
+      filter: blur(14px);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 0;
+      transition: opacity 0.45s ease;
+    }
+
+    /* Luminous inner edge trace */
+    .log-box-wrapper::after {
+      content: '';
+      position: absolute;
+      inset: -1.5px;
+      border-radius: 7.5px;
+      background: conic-gradient(
+        from var(--gemini-angle, 0deg),
+        #3b82f6 0deg,
+        #9333ea 70deg,
+        #e879f9 140deg,
+        #38bdf8 200deg,
+        transparent 280deg,
+        #3b82f6 360deg
+      );
+      filter: blur(1.5px);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 0;
+      transition: opacity 0.45s ease;
+    }
+
+    /* Active while inbox is being scanned */
+    .log-box-wrapper.scanning-active::before {
+      opacity: 0.95;
+      animation: geminiSpin 3.5s linear infinite, geminiGlowPulse 2.4s ease-in-out infinite alternate;
+    }
+
+    .log-box-wrapper.scanning-active::after {
+      opacity: 0.95;
+      animation: geminiSpin 3.5s linear infinite;
+    }
+
+    .log-box-wrapper.scanning-active #logBox {
+      border-color: rgba(96, 165, 250, 0.45);
+      box-shadow: inset 0 0 20px rgba(59, 130, 246, 0.08);
+    }
+
+    @keyframes geminiSpin {
+      0% {
+        --gemini-angle: 0deg;
+      }
+      100% {
+        --gemini-angle: 360deg;
+      }
+    }
+
+    @keyframes geminiGlowPulse {
+      0% {
+        filter: blur(11px) brightness(1);
+        opacity: 0.75;
+        transform: scale(0.998);
+      }
+      50% {
+        filter: blur(18px) brightness(1.35);
+        opacity: 1;
+        transform: scale(1.006);
+      }
+      100% {
+        filter: blur(13px) brightness(1.15);
+        opacity: 0.82;
+        transform: scale(1);
+      }
+    }
+
     #logBox {
-      background: #0b0c0e;
+      position: relative;
+      z-index: 1;
+      background: #090a0d;
       border: 1px solid var(--border);
       border-radius: 6px;
       padding: 12px 14px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 12px;
       line-height: 1.6;
-      color: #9ca3af;
-      height: 120px;
+      color: #8b92a4;
+      height: 110px;
       overflow-y: auto;
       white-space: pre-wrap;
+      transition: border-color 0.35s ease, box-shadow 0.35s ease;
     }
 
-    /* To-Do Section */
+    /* Section Header & Sort Controls */
     .section-header {
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .title-with-sort {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
     }
 
     .section-title {
       font-size: 14px;
       font-weight: 600;
       color: var(--text);
+      letter-spacing: 0.2px;
+    }
+
+    .sort-selector {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #090a0d;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 2px 3px;
+    }
+
+    .sort-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      padding: 0 4px;
+    }
+
+    .sort-pill {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 9px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .sort-pill:hover {
+      color: var(--text);
+    }
+    .sort-pill.active {
+      background: #1c202b;
+      color: #60a5fa;
     }
 
     .count-indicator {
@@ -216,94 +413,130 @@
       color: var(--text-dim);
     }
 
+    /* To-Do List & Interactive Rows */
     .todo-list, .email-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-    }
-
-    .todo-row, .email-row {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 14px 16px;
-      transition: border-color 0.15s ease;
+      gap: 8px;
     }
 
     .todo-row {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 13px 18px;
       display: flex;
-      align-items: flex-start;
-      gap: 14px;
+      flex-direction: column;
+      position: relative;
+      border-left-width: 3.5px;
+      border-left-style: solid;
+      border-left-color: var(--edge-color, #4f46e5);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+
+      /* Gentle, Silky-Smooth Hover Physics */
+      transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                  border-color 0.35s ease,
+                  background-color 0.35s ease,
+                  box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+      cursor: pointer;
     }
 
-    .todo-row:hover, .email-row:hover {
-      border-color: var(--border-hover);
-    }
-
-    .todo-row.top-priority {
-      border-color: rgba(245, 158, 11, 0.4);
-      background: #1c1a17;
+    /* Soft, Luxurious Hover Elevation */
+    .todo-row:hover,
+    .todo-row.menu-open {
+      transform: translateY(-2px) scale(1.012);
+      border-color: #383e50;
+      border-left-color: var(--edge-color, #4f46e5);
+      background-color: var(--card-hover);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.75);
+      z-index: 10;
     }
 
     .todo-row.done {
       opacity: 0.45;
+      border-left-color: #334155 !important;
     }
 
     .todo-row.done .task-name {
       text-decoration: line-through;
     }
 
-    .todo-body, .email-body-content {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .task-header, .email-header {
+    /* Default View: Only Title & Deadline */
+    .task-header {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      gap: 10px;
-      margin-bottom: 4px;
-      flex-wrap: wrap;
+      gap: 12px;
+      width: 100%;
     }
 
-    .task-name, .email-subject {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .task-date, .email-date {
-      font-size: 12px;
+    .task-name {
+      font-size: 13.5px;
       font-weight: 500;
-      color: #93c5fd;
+      color: var(--text);
+      line-height: 1.4;
+      flex: 1;
+    }
+
+    .task-date {
+      font-size: 12px;
+      font-weight: 400;
+      color: #94a3b8;
       font-family: ui-monospace, SFMono-Regular, monospace;
       white-space: nowrap;
     }
 
-    .email-date {
-      color: var(--text-dim);
+    /* On Hover: Smoothly Expand Details Drawer */
+    .task-details {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+                  opacity 0.35s ease,
+                  margin-top 0.35s ease;
+      margin-top: 0;
+    }
+
+    .todo-row:hover .task-details,
+    .todo-row.menu-open .task-details {
+      max-height: 350px;
+      opacity: 1;
+      margin-top: 8px;
+      overflow: visible !important;
     }
 
     .consequence {
       font-size: 12px;
-      color: #d1a153;
+      color: #94a3b8;
       margin-top: 4px;
       line-height: 1.4;
     }
 
-    .snippet-text {
-      font-size: 12px;
-      color: #9ca3af;
-      margin-top: 4px;
-      line-height: 1.5;
+    .action-cta-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #34d399;
+      background: #0d2218;
+      border: 1px solid #10b98133;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      margin-top: 6px;
+    }
+    .action-cta-link:hover {
+      background: #143526;
+      border-color: #10b981;
     }
 
     .meta-bar {
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-top: 8px;
       font-size: 11px;
       color: var(--text-dim);
     }
@@ -312,49 +545,382 @@
       color: #60a5fa;
       text-decoration: none;
     }
-
     .source-link:hover {
       text-decoration: underline;
     }
 
-    /* Buttons */
-    .button-group {
+    /* Task Progress Footer Bar */
+    .task-footer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .footer-actions {
       display: flex;
       align-items: center;
       gap: 6px;
-      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    /* 1 Small Progress Button */
+    .btn-progress {
+      background: #181c26;
+      color: #cbd5e1;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 25px;
+    }
+
+    .btn-progress:hover {
+      background: #2563eb;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    .btn-progress.is-done {
+      background: #0d2218;
+      border-color: #10b98144;
+      color: #34d399;
+    }
+    .btn-progress.is-done:hover {
+      background: #143526;
+      border-color: #10b981;
+    }
+
+    /* Secondary 3-Dots Menu Container */
+    .task-menu-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .btn-more {
+      background: #181b25;
+      border: 1px solid var(--border);
+      color: #94a3b8;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 0 8px;
+      cursor: pointer;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      height: 25px;
+    }
+    .btn-more:hover, .btn-more:focus {
+      background: #252b3d;
+      color: #fff;
+      border-color: #3b82f6;
+    }
+
+    /* Dropdown Menu (Opens Upward to never clip) */
+    .task-menu-dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 6px);
+      background: #181b24;
+      border: 1px solid #303646;
+      border-radius: 6px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      min-width: 140px;
+      z-index: 9999;
+      padding: 4px;
+    }
+
+    .task-menu-dropdown.show {
+      display: flex !important;
+      flex-direction: column;
+      animation: menuFadeIn 0.15s ease-out;
+    }
+
+    @keyframes menuFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .task-menu-item {
+      background: transparent;
+      border: none;
+      color: #cbd5e1;
+      font-family: inherit;
+      font-size: 11.5px;
+      padding: 6px 10px;
+      text-align: left;
+      cursor: pointer;
+      text-decoration: none;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.12s ease, color 0.12s ease;
+      width: 100%;
+    }
+    .task-menu-item:hover {
+      background: #252a3b;
+      color: #fff;
+    }
+    .task-menu-item.item-delete {
+      color: #f87171;
+    }
+    .task-menu-item.item-delete:hover {
+      background: #3b181c;
+      color: #fca5a5;
+    }
+
+    /* Bottom-Left Floating Expandable "+" Button */
+    .fab-wrapper {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      z-index: 1000;
+    }
+
+    .fab-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4), 0 2px 6px rgba(0, 0, 0, 0.5);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease;
+    }
+
+    .fab-btn:hover {
+      background: #3b82f6;
+      transform: scale(1.08);
+    }
+
+    .fab-icon {
+      font-size: 22px;
+      font-weight: 300;
+      line-height: 1;
+      transition: transform 0.2s ease;
+    }
+
+    .fab-btn.open .fab-icon {
+      transform: rotate(45deg);
+    }
+
+    /* Floating Expandable Card */
+    .fab-panel {
+      display: none;
+      position: absolute;
+      bottom: 54px;
+      left: 0;
+      width: 350px;
+      background: #14161f;
+      border: 1px solid var(--border-hover);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.04);
+      animation: fabSlideUp 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .fab-panel.show {
+      display: block;
+    }
+
+    @keyframes fabSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .fab-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .fab-panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .btn-close-fab {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .btn-close-fab:hover {
+      color: var(--text);
+      background: #202432;
+    }
+
+    .input-field {
+      background: #0a0b0e;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .input-field:focus {
+      border-color: #3b82f6;
+    }
+    .input-field::placeholder {
+      color: var(--text-dim);
+    }
+
+    .fab-input {
+      width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .fab-controls-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .input-date {
+      color-scheme: dark;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 6px 9px;
+      background: #0a0b0e;
+      color: #94a3b8;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+
+    .preset-chips {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .preset-chip {
+      background: #1a1c26;
+      border: 1px solid var(--border);
+      color: #8b92a4;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 3px 6px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+    .preset-chip:hover {
+      background: #252938;
+      color: #fff;
+    }
+    .clear-chip {
+      color: #f87171;
+    }
+
+    .btn-fab-submit {
+      margin-left: auto;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .btn-fab-submit:hover {
+      background: #3b82f6;
+    }
+
+    /* Email View */
+    .email-row {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px 16px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+      transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    .email-row:hover {
+      border-color: var(--border-hover);
+      background-color: var(--card-hover);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.65);
+    }
+
+    .email-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+
+    .email-subject {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .email-date {
+      font-size: 12px;
+      color: var(--text-dim);
     }
 
     .btn-action {
-      background: #202228;
-      color: #cbd5e1;
+      background: #171922;
+      color: #94a3b8;
       border: 1px solid var(--border);
       border-radius: 4px;
       font-size: 11px;
       font-weight: 500;
-      padding: 5px 10px;
+      padding: 4px 9px;
       cursor: pointer;
-      transition: background 0.15s ease, border-color 0.15s ease;
+      transition: all 0.15s ease;
     }
-
     .btn-action:hover {
-      background: #2a2c36;
+      background: #232736;
       border-color: var(--border-hover);
-      color: #fff;
-    }
-
-    .btn-done {
-      color: #34d399;
-    }
-    .btn-done:hover {
-      border-color: #059669;
-    }
-
-    .btn-skip {
-      color: #94a3b8;
-    }
-    .btn-skip:hover {
-      border-color: #64748b;
+      color: #edf0f5;
     }
 
     .btn-summary {
@@ -364,140 +930,9 @@
       border-color: #0284c7;
     }
 
-    .btn-delete {
-      color: #f87171;
-    }
-    .btn-delete:hover {
-      border-color: #ef4444;
-      background: #2a1b1d;
-    }
-
-    .btn-cal {
-      color: #38bdf8;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-    }
-    .btn-cal:hover {
-      border-color: #0284c7;
-      color: #7dd3fc;
-    }
-
-    /* Action CTA Link Button in Todo */
-    .action-cta-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 600;
-      color: #10b981;
-      background: #0f291e;
-      border: 1px solid #10b98144;
-      text-decoration: none;
-      transition: all 0.15s ease;
-    }
-    .action-cta-link:hover {
-      background: #153e2d;
-      border-color: #10b981;
-      color: #34d399;
-      text-decoration: none;
-    }
-
-    /* Manual Input Section */
-    .task-input-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 14px 16px;
-      margin-bottom: 20px;
-    }
-
-    .task-input-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .task-input-form {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .input-row {
-      display: flex;
-      gap: 8px;
-    }
-
-    .input-field {
-      background: #111215;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 13px;
-      padding: 7px 12px;
-      outline: none;
-      transition: border-color 0.15s ease;
-    }
-    .input-field:focus {
-      border-color: var(--border-hover);
-    }
-    .input-field::placeholder {
-      color: var(--text-dim);
-    }
-
-    .input-main {
-      flex: 1;
-    }
-    .input-date {
-      width: 170px;
-    }
-    .input-category {
-      width: 120px;
-      background: #111215;
-      color: var(--text);
-    }
-
-    .btn-add {
-      background: #2a2c36;
-      color: var(--text);
-      border: 1px solid var(--border-hover);
-      border-radius: 4px;
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: 600;
-      padding: 7px 16px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.15s ease;
-    }
-    .btn-add:hover {
-      background: #383a45;
-      color: #fff;
-    }
-
-    .priority-badge {
-      font-size: 10px;
-      font-weight: 700;
-      color: #f59e0b;
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      padding: 1px 6px;
-      border-radius: 3px;
-      margin-left: 8px;
-    }
-
-    /* Full Email Reader Box */
     .email-full-body {
       display: none;
-      background: #0d0e12;
+      background: #090a0e;
       border: 1px solid var(--border);
       border-radius: 4px;
       padding: 12px;
@@ -510,31 +945,27 @@
       overflow-y: auto;
     }
 
-    /* Summary Box */
     .summary-card {
       display: none;
-      background: var(--summary-bg);
-      border: 1px solid var(--summary-border);
+      background: #0e141f;
+      border: 1px solid #1e293b;
       border-radius: 4px;
       padding: 12px 14px;
       margin-top: 10px;
       font-size: 12px;
-      color: #bae6fd;
+      color: #94a3b8;
     }
 
     .summary-title {
-      font-weight: 700;
+      font-weight: 600;
       margin-bottom: 4px;
       color: #38bdf8;
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
 
     .summary-card ul {
       margin-top: 6px;
       padding-left: 18px;
-      color: #93c5fd;
+      color: #94a3b8;
     }
 
     .summary-card li {
@@ -553,68 +984,67 @@
 </head>
 <body>
 
+<!-- Deep Obsidian Backdrop -->
+<div class="ambient-backdrop" aria-hidden="true"></div>
+
 <div class="container">
   <!-- Minimal Header -->
   <header>
     <div>
       <h1>LIFELOCKER</h1>
-      <div class="subtext">Personal Email Intelligence & Consequence Engine</div>
+      <div class="subtext">Email intelligence and task engine</div>
     </div>
   </header>
 
   <!-- Navigation Tabs -->
   <div class="tab-bar">
-    <button id="tabTasks" class="tab-btn active" onclick="switchTab('tasks')">To-Do Tasks</button>
-    <button id="tabEmails" class="tab-btn" onclick="switchTab('emails')">See Mails</button>
+    <button id="tabTasks" class="tab-btn active" onclick="switchTab('tasks')">Tasks</button>
+    <button id="tabEmails" class="tab-btn" onclick="switchTab('emails')">Messages</button>
   </div>
 
   <!-- TAB 1: TO-DO TASKS -->
   <div id="panelTasks" class="view-panel active">
-    <!-- Cross-Email Consequence Alert Banner -->
+    <!-- Conflict Warning Banner -->
     <div id="consequenceBanner" class="consequence-banner">
-      <div id="bannerTitle" class="banner-title">⚠️ High Consequence Conflict Detected</div>
-      <div id="bannerDesc" class="banner-desc">Analyzing cross-email dependencies...</div>
+      <div id="bannerTitle" class="banner-title">Conflict detected</div>
+      <div id="bannerDesc" class="banner-desc">Analyzing task dependencies...</div>
     </div>
 
     <!-- Controls -->
     <div class="controls">
-      <button id="scanBtn" class="scan-btn" onclick="startScan()">What Am I Forgetting?</button>
-      <div id="statusText" class="status-badge">Status: Ready</div>
-    </div>
-
-    <!-- Add Custom Task Section -->
-    <div class="task-input-card">
-      <div class="task-input-title">
-        <span>Add To-Do Task</span>
-        <span style="font-size: 11px; color: var(--text-dim); font-weight: 400;">Analyzed alongside emails during scan</span>
+      <div class="scan-group">
+        <button id="scanBtn" class="scan-btn" onclick="startScan()">Scan Inbox</button>
+        <select id="scanScope" class="scan-scope-select" title="Select scan scope">
+          <option value="5" selected>Latest 5 emails</option>
+          <option value="10">Latest 10 emails</option>
+          <option value="25">Latest 25 emails</option>
+          <option value="today">Today's emails</option>
+          <option value="3d">Past 3 days</option>
+          <option value="7d">Past 7 days</option>
+        </select>
+        <button id="resetCacheBtn" class="btn-action" title="Clear scan history so you can re-scan and test emails fresh" onclick="resetScanHistory()">Reset Cache</button>
       </div>
-      <form class="task-input-form" onsubmit="event.preventDefault(); addManualTask();">
-        <div class="input-row">
-          <input id="manualAction" class="input-field input-main" type="text" placeholder="What do you need to do? (e.g. Apply for passport renewal, Pay rent)" required />
-          <input id="manualDate" class="input-field input-date" type="text" placeholder="Deadline (optional)" />
-          <select id="manualCategory" class="input-field input-category">
-            <option value="personal">Personal</option>
-            <option value="travel">Travel</option>
-            <option value="health">Health</option>
-            <option value="finance">Finance</option>
-            <option value="project">Project</option>
-            <option value="hackathon">Hackathon</option>
-            <option value="work">Work</option>
-          </select>
-          <button type="submit" class="btn-add">+ Add Task</button>
-        </div>
-      </form>
+      <div id="statusText" class="status-badge">Ready</div>
     </div>
 
     <!-- Realtime Scan Process Log -->
     <div class="log-container">
-      <div class="log-header">Scan Process (Top 5 Emails)</div>
-      <div id="logBox">Press &quot;What Am I Forgetting?&quot; to scan top 5 inbox emails.</div>
+      <div class="log-header">Inbox Scan Log</div>
+      <div id="logBoxWrapper" class="log-box-wrapper">
+        <div id="logBox">Press &quot;Scan Inbox&quot; to inspect recent messages for actionable items.</div>
+      </div>
     </div>
 
-    <!-- Priority Sorted Tasks -->
+    <!-- Header & Sorting -->
     <div class="section-header">
-      <div class="section-title">Prioritized To-Do List</div>
+      <div class="title-with-sort">
+        <div class="section-title">Tasks</div>
+        <div class="sort-selector">
+          <span class="sort-label">Sort:</span>
+          <button id="sortBtnCritical" class="sort-pill active" onclick="setSortMode('criticalness')">Critical</button>
+          <button id="sortBtnTime" class="sort-pill" onclick="setSortMode('time')">Deadline</button>
+        </div>
+      </div>
       <div id="itemCount" class="count-indicator">0 items</div>
     </div>
 
@@ -623,25 +1053,227 @@
     </div>
   </div>
 
-  <!-- TAB 2: SEE MAILS -->
+  <!-- TAB 2: MESSAGES -->
   <div id="panelEmails" class="view-panel">
     <div class="section-header">
-      <div class="section-title">Inbox Messages</div>
-      <button class="btn-action" onclick="loadEmails()">⟳ Refresh Mails</button>
+      <div class="title-with-sort">
+        <div class="section-title">Inbox Messages</div>
+        <select id="messagesScope" class="scan-scope-select" onchange="loadEmails()" title="Filter messages">
+          <option value="12" selected>Latest 12</option>
+          <option value="25">Latest 25</option>
+          <option value="today">Today's emails</option>
+          <option value="3d">Past 3 days</option>
+          <option value="7d">Past 7 days</option>
+        </select>
+      </div>
+      <button class="btn-action" onclick="loadEmails()">Refresh</button>
     </div>
 
     <div id="emailContainer" class="email-list">
       <!-- Emails populated dynamically -->
-      <div class="empty-state">Loading your emails...</div>
+      <div class="empty-state">Loading messages...</div>
     </div>
   </div>
+</div>
+
+<!-- Floating Action Button in Bottom-Left -->
+<div class="fab-wrapper">
+  <div id="fabPanel" class="fab-panel">
+    <div class="fab-panel-header">
+      <span class="fab-panel-title">Add Task</span>
+      <button type="button" class="btn-close-fab" onclick="closeAddTaskPanel()">✕</button>
+    </div>
+    <form onsubmit="event.preventDefault(); submitManualTask();">
+      <input id="manualAction" class="input-field fab-input" type="text" placeholder="What needs to be done?" required autocomplete="off" />
+      <div class="fab-controls-row">
+        <input id="manualDate" class="input-field input-date" type="date" title="Select deadline" />
+        <div class="preset-chips">
+          <button type="button" class="preset-chip" onclick="setPresetDate(0)">Today</button>
+          <button type="button" class="preset-chip" onclick="setPresetDate(1)">Tomorrow</button>
+          <button type="button" class="preset-chip" onclick="setPresetDate(7)">+7d</button>
+          <button type="button" class="preset-chip clear-chip" onclick="setPresetDate(null)">✕</button>
+        </div>
+        <button type="submit" class="btn-fab-submit">Add</button>
+      </div>
+    </form>
+  </div>
+  <button id="fabBtn" class="fab-btn" onclick="toggleAddTaskPanel()" title="Add Task">
+    <span id="fabIcon" class="fab-icon">+</span>
+  </button>
 </div>
 
 <script>
   let isScanning = false;
   let cachedEmails = [];
+  let cachedTodos = [];
+  let cachedAlert = null;
+  let currentSortMode = 'criticalness';
 
-  // Tab switching
+  // --- Edge Color Tagging Logic ---
+  function getEdgeColor(t) {
+    if (t.priority === 1) return '#f43f5e';
+
+    const cat = (t.category || '').toLowerCase();
+    const action = (t.action || '').toLowerCase();
+
+    if (cat === 'academic' || cat === 'school' || /school|exam|homework|assignment|class|college|professor|quiz|test|lecture/.test(action)) {
+      return '#6366f1';
+    }
+    if (cat === 'work' || /work|meeting|client|report|office/.test(action)) {
+      return '#38bdf8';
+    }
+    if (cat === 'finance' || /bill|pay|fee|due|invoice|tax|rent/.test(action)) {
+      return '#f59e0b';
+    }
+    if (cat === 'project' || cat === 'hackathon' || /project|build|github|code/.test(action)) {
+      return '#10b981';
+    }
+    if (cat === 'health' || /doctor|dentist|hospital|medicine|clinic/.test(action)) {
+      return '#14b8a6';
+    }
+    if (cat === 'travel' || /flight|hotel|visa|passport|ticket|trip/.test(action)) {
+      return '#ec4899';
+    }
+    return '#8b5cf6';
+  }
+
+  // --- Google Calendar URL Builder ---
+  function getCalendarUrl(t) {
+    const rawDate = t.sort_date || t.date_time || '';
+    if (!rawDate || rawDate === '9999-99-99' || rawDate === 'No Date') {
+      return null;
+    }
+
+    let startIso = '';
+    let endIso = '';
+
+    const isoMatch = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+    if (isoMatch) {
+      const year = isoMatch[1];
+      const month = isoMatch[2];
+      const day = isoMatch[3];
+      const hour = isoMatch[4];
+      const min = isoMatch[5];
+
+      if (hour && min) {
+        startIso = `${year}${month}${day}T${hour}${min}00`;
+        let endHourNum = parseInt(hour, 10) + 1;
+        let endDayNum = parseInt(day, 10);
+        if (endHourNum >= 24) {
+          endHourNum = endHourNum - 24;
+          endDayNum += 1;
+        }
+        const pad = (n) => String(n).padStart(2, '0');
+        endIso = `${year}${month}${pad(endDayNum)}T${pad(endHourNum)}${min}00`;
+      } else {
+        startIso = `${year}${month}${day}`;
+        const nextDayNum = parseInt(day, 10) + 1;
+        const pad = (n) => String(n).padStart(2, '0');
+        endIso = `${year}${month}${pad(nextDayNum)}`;
+      }
+    } else {
+      const parsed = Date.parse(rawDate);
+      if (!isNaN(parsed)) {
+        const d = new Date(parsed);
+        const pad = (n) => String(n).padStart(2, '0');
+        startIso = `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+        const dEnd = new Date(parsed + 60 * 60 * 1000);
+        endIso = `${dEnd.getUTCFullYear()}${pad(dEnd.getUTCMonth() + 1)}${pad(dEnd.getUTCDate())}T${pad(dEnd.getUTCHours())}${pad(dEnd.getUTCMinutes())}00Z`;
+      } else {
+        return null;
+      }
+    }
+
+    const title = encodeURIComponent(t.action || 'Task');
+    let details = 'LIFELOCKER Task';
+    if (t.consequence) details += `\nImpact: ${t.consequence}`;
+    if (t.gmail_link) details += `\nEmail: ${t.gmail_link}`;
+    if (t.action_url) details += `\nLink: ${t.action_url}`;
+    const encDetails = encodeURIComponent(details);
+
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startIso}/${endIso}&details=${encDetails}`;
+  }
+
+  // --- Dropdown Menu Toggle for Row ---
+  function toggleTaskMenu(id) {
+    const menu = document.getElementById(`taskMenu-${id}`);
+    if (!menu) return;
+    const isCurrentlyOpen = menu.classList.contains('show');
+
+    // Close any open menus
+    closeAllTaskMenus();
+
+    if (!isCurrentlyOpen) {
+      menu.classList.add('show');
+      const row = menu.closest('.todo-row');
+      if (row) row.classList.add('menu-open');
+    }
+  }
+
+  function closeAllTaskMenus() {
+    document.querySelectorAll('.task-menu-dropdown.show').forEach(m => m.classList.remove('show'));
+    document.querySelectorAll('.todo-row.menu-open').forEach(r => r.classList.remove('menu-open'));
+  }
+
+  // Close menus when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.task-menu-container')) {
+      closeAllTaskMenus();
+    }
+  });
+
+  // --- Floating Action Button (FAB) Toggle ---
+  function toggleAddTaskPanel() {
+    const panel = document.getElementById('fabPanel');
+    const btn = document.getElementById('fabBtn');
+    const isOpen = panel.classList.contains('show');
+
+    if (isOpen) {
+      closeAddTaskPanel();
+    } else {
+      panel.classList.add('show');
+      btn.classList.add('open');
+      setTimeout(() => {
+        const input = document.getElementById('manualAction');
+        if (input) input.focus();
+      }, 50);
+    }
+  }
+
+  function closeAddTaskPanel() {
+    const panel = document.getElementById('fabPanel');
+    const btn = document.getElementById('fabBtn');
+    panel.classList.remove('show');
+    btn.classList.remove('open');
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeAddTaskPanel();
+      closeAllTaskMenus();
+    }
+  });
+  document.addEventListener('click', (e) => {
+    const fabWrapper = document.querySelector('.fab-wrapper');
+    if (fabWrapper && !fabWrapper.contains(e.target)) {
+      closeAddTaskPanel();
+    }
+  });
+
+  // --- Date Preset Chips ---
+  function setPresetDate(offsetDays) {
+    const input = document.getElementById('manualDate');
+    if (offsetDays === null) {
+      input.value = '';
+      return;
+    }
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    const pad = (n) => String(n).padStart(2, '0');
+    input.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  // --- Tab Switching ---
   function switchTab(tab) {
     document.getElementById('tabTasks').classList.toggle('active', tab === 'tasks');
     document.getElementById('tabEmails').classList.toggle('active', tab === 'emails');
@@ -653,15 +1285,65 @@
     }
   }
 
+  // --- Sort Mode Switcher ---
+  function setSortMode(mode) {
+    currentSortMode = mode;
+    document.getElementById('sortBtnCritical').classList.toggle('active', mode === 'criticalness');
+    document.getElementById('sortBtnTime').classList.toggle('active', mode === 'time');
+    renderCurrentTodos();
+    loadTodos();
+  }
+
+  // Sort array locally
+  function sortTodosArray(todos, mode) {
+    const copy = [...todos];
+    if (mode === 'time') {
+      return copy.sort((a, b) => {
+        if ((a.status === 'done') !== (b.status === 'done')) {
+          return a.status === 'done' ? 1 : -1;
+        }
+        const aHasDate = a.sort_date && a.sort_date !== '9999-99-99';
+        const bHasDate = b.sort_date && b.sort_date !== '9999-99-99';
+        if (aHasDate !== bHasDate) return aHasDate ? -1 : 1;
+        if (aHasDate && bHasDate && a.sort_date !== b.sort_date) {
+          return a.sort_date.localeCompare(b.sort_date);
+        }
+        if (a.priority !== b.priority) return a.priority - b.priority;
+        return b.id - a.id;
+      });
+    } else {
+      return copy.sort((a, b) => {
+        if ((a.status === 'done') !== (b.status === 'done')) {
+          return a.status === 'done' ? 1 : -1;
+        }
+        if (a.priority !== b.priority) return a.priority - b.priority;
+        const aHasDate = a.sort_date && a.sort_date !== '9999-99-99';
+        const bHasDate = b.sort_date && b.sort_date !== '9999-99-99';
+        if (aHasDate !== bHasDate) return aHasDate ? -1 : 1;
+        if (aHasDate && bHasDate && a.sort_date !== b.sort_date) {
+          return a.sort_date.localeCompare(b.sort_date);
+        }
+        return b.id - a.id;
+      });
+    }
+  }
+
   // --- Load To-Dos ---
   async function loadTodos() {
     try {
-      const res = await fetch('/api/todos');
+      const res = await fetch(`/api/todos?sort=${currentSortMode}`);
       const data = await res.json();
-      renderAll(data.todos || [], data.consequence_alert);
+      cachedTodos = data.todos || [];
+      cachedAlert = data.consequence_alert;
+      renderCurrentTodos();
     } catch (e) {
       console.error(e);
     }
+  }
+
+  function renderCurrentTodos() {
+    const sorted = sortTodosArray(cachedTodos, currentSortMode);
+    renderAll(sorted, cachedAlert);
   }
 
   function renderAll(todos, alert) {
@@ -671,7 +1353,7 @@
 
     if (alert && alert.has_conflict && alert.alert_title) {
       banner.style.display = 'block';
-      bTitle.textContent = '⚠️ ' + alert.alert_title;
+      bTitle.textContent = alert.alert_title;
       bDesc.textContent = alert.alert_explanation || '';
     } else {
       banner.style.display = 'none';
@@ -685,7 +1367,7 @@
     if (todos.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
-          No actionable obligations found. Click &quot;What Am I Forgetting?&quot; to scan your inbox.
+          No active tasks. Press &quot;+&quot; to add a task or scan your inbox.
         </div>
       `;
       return;
@@ -693,129 +1375,78 @@
 
     todos.forEach((t) => {
       const row = document.createElement('div');
-      const isTop = t.priority === 1;
       const isManual = t.source_type === 'manual';
-      row.className = `todo-row ${t.status === 'done' ? 'done' : ''} ${isTop ? 'top-priority' : ''}`;
+      const edgeColor = getEdgeColor(t);
+      const dateStr = t.date_time || t.sort_date || '';
 
-      const dateStr = t.date_time || t.sort_date || 'No Date';
-      const consequenceHtml = t.consequence ? `<div class="consequence">Impact: ${escapeHtml(t.consequence)}</div>` : '';
-      const emailLink = t.gmail_link ? `<a href="${t.gmail_link}" target="_blank" class="source-link">Open Email ↗</a>` : '';
-      const senderHtml = t.source_sender ? `<span>From: ${escapeHtml(t.source_sender)}</span>` : '';
-      const priorityBadge = isTop ? `<span class="priority-badge">TOP PRIORITY</span>` : '';
-      const tagBadge = isManual ? `<span style="font-size: 10px; color: #a5b4fc; background: #1e1b4b; border: 1px solid #4338ca; padding: 1px 6px; border-radius: 3px; margin-left: 6px;">Manual Task</span>` : '';
+      row.className = `todo-row ${t.status === 'done' ? 'done' : ''}`;
+      row.style.setProperty('--edge-color', edgeColor);
 
-      // Actionable useful link button (e.g. "Pay Now", "Fill Form", "Confirm Slot")
+      // Only display impact if extracted from email (never for manual user tasks)
+      let consequenceHtml = '';
+      if (!isManual && t.consequence && t.consequence.trim() !== '') {
+        consequenceHtml = `<div class="consequence">Impact: ${escapeHtml(t.consequence)}</div>`;
+      }
+
+      const emailLink = t.gmail_link ? `<a href="${t.gmail_link}" target="_blank" class="source-link">Gmail</a>` : '';
+      const senderHtml = (!isManual && t.source_sender) ? `<span>From: ${escapeHtml(t.source_sender)}</span>` : '';
+
+      // Action button link if present
       let actionBtnHtml = '';
       if (t.action_url) {
-        const ctaText = t.action_url_text || 'Take Action';
+        const ctaText = t.action_url_text || 'Open Link';
         actionBtnHtml = `
-          <div style="margin-top: 8px;">
+          <div>
             <a href="${escapeHtml(t.action_url)}" target="_blank" class="action-cta-link">
-              🔗 ${escapeHtml(ctaText)} ↗
+              ${escapeHtml(ctaText)}
             </a>
           </div>
         `;
       }
 
-      row.innerHTML = `
-        <div class="todo-body">
-          <div class="task-header">
-            <span class="task-name">${escapeHtml(t.action)} ${priorityBadge} ${tagBadge}</span>
-            <span class="task-date">${escapeHtml(dateStr)}</span>
-          </div>
+      // Google Calendar link
+      const calUrl = getCalendarUrl(t);
+      const calOptionHtml = calUrl ? `<a href="${calUrl}" target="_blank" class="task-menu-item" onclick="event.stopPropagation(); closeAllTaskMenus();">Add to Calendar</a>` : '';
 
+      row.innerHTML = `
+        <!-- Default Clean State: Title & Deadline Only -->
+        <div class="task-header">
+          <span class="task-name">${escapeHtml(t.action)}</span>
+          ${dateStr ? `<span class="task-date">${escapeHtml(dateStr)}</span>` : ''}
+        </div>
+
+        <!-- On Hover: Details & Task Progress Reveal -->
+        <div class="task-details">
           ${consequenceHtml}
           ${actionBtnHtml}
 
-          <div class="meta-bar">
-            ${senderHtml}
-            ${emailLink}
-          </div>
-        </div>
+          <div class="task-footer-bar">
+            <div class="meta-bar">
+              ${senderHtml}
+              ${emailLink}
+            </div>
 
-        <div class="button-group">
-          ${getCalendarButtonHtml(t)}
-          <button class="btn-action btn-done" onclick="markDone(${t.id})">
-            ${t.status === 'done' ? 'Undo' : 'Done'}
-          </button>
-          <button class="btn-action btn-skip" onclick="skipItem(${t.id})">
-            Skip
-          </button>
-          <button class="btn-action btn-delete" title="Delete task" onclick="deleteTask(${t.id})">
-            ✕
-          </button>
+            <!-- Simplified 1-button progress + menu -->
+            <div class="footer-actions">
+              <button class="btn-progress ${t.status === 'done' ? 'is-done' : ''}" onclick="event.stopPropagation(); markDone(${t.id})">
+                ${t.status === 'done' ? 'Completed' : 'Mark Done'}
+              </button>
+
+              <div class="task-menu-container">
+                <button type="button" class="btn-more" title="More options" onclick="event.stopPropagation(); toggleTaskMenu(${t.id})">···</button>
+                <div id="taskMenu-${t.id}" class="task-menu-dropdown">
+                  ${calOptionHtml}
+                  <button type="button" class="task-menu-item" onclick="event.stopPropagation(); closeAllTaskMenus(); skipItem(${t.id});">Skip</button>
+                  <button type="button" class="task-menu-item item-delete" onclick="event.stopPropagation(); closeAllTaskMenus(); deleteTask(${t.id});">Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       `;
 
       container.appendChild(row);
     });
-  }
-
-  // --- Google Calendar Link Generator ---
-  function getCalendarButtonHtml(t) {
-    const rawDate = t.sort_date || t.date_time || '';
-    if (!rawDate || rawDate === '9999-99-99' || rawDate === 'No Date') {
-      return '';
-    }
-
-    let startIso = '';
-    let endIso = '';
-
-    // Matches YYYY-MM-DDTHH:MM or YYYY-MM-DD
-    const isoMatch = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
-    if (isoMatch) {
-      const year = isoMatch[1];
-      const month = isoMatch[2];
-      const day = isoMatch[3];
-      const hour = isoMatch[4];
-      const min = isoMatch[5];
-
-      if (hour && min) {
-        startIso = `${year}${month}${day}T${hour}${min}00`;
-        // End time + 1 hour later
-        let endHourNum = parseInt(hour, 10) + 1;
-        let endDayNum = parseInt(day, 10);
-        if (endHourNum >= 24) {
-          endHourNum = endHourNum - 24;
-          endDayNum += 1;
-        }
-        const pad = (n) => String(n).padStart(2, '0');
-        endIso = `${year}${month}${pad(endDayNum)}T${pad(endHourNum)}${min}00`;
-      } else {
-        // All-day event
-        startIso = `${year}${month}${day}`;
-        const nextDayNum = parseInt(day, 10) + 1;
-        const pad = (n) => String(n).padStart(2, '0');
-        endIso = `${year}${month}${pad(nextDayNum)}`;
-      }
-    } else {
-      // Fallback: try JS Date parser
-      const parsed = Date.parse(rawDate);
-      if (!isNaN(parsed)) {
-        const d = new Date(parsed);
-        const pad = (n) => String(n).padStart(2, '0');
-        startIso = `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
-        const dEnd = new Date(parsed + 60 * 60 * 1000);
-        endIso = `${dEnd.getUTCFullYear()}${pad(dEnd.getUTCMonth() + 1)}${pad(dEnd.getUTCDate())}T${pad(dEnd.getUTCHours())}${pad(dEnd.getUTCMinutes())}00Z`;
-      } else {
-        return '';
-      }
-    }
-
-    const title = encodeURIComponent(t.action || 'LIFELOCKER Task');
-    let details = `Created by LIFELOCKER\nCategory: ${t.category || 'personal'}`;
-    if (t.consequence) details += `\nConsequence if missed: ${t.consequence}`;
-    if (t.gmail_link) details += `\nSource Email: ${t.gmail_link}`;
-    if (t.action_url) details += `\nAction URL: ${t.action_url}`;
-    const encDetails = encodeURIComponent(details);
-
-    const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startIso}/${endIso}&details=${encDetails}`;
-
-    return `
-      <a href="${calUrl}" target="_blank" class="btn-action btn-cal" title="Add to Google Calendar">
-        📅 Cal
-      </a>
-    `;
   }
 
   // --- Realtime Scan ---
@@ -824,15 +1455,21 @@
     isScanning = true;
 
     const btn = document.getElementById('scanBtn');
+    const scopeSelect = document.getElementById('scanScope');
     const logBox = document.getElementById('logBox');
+    const logBoxWrapper = document.getElementById('logBoxWrapper');
     const status = document.getElementById('statusText');
+    const scope = scopeSelect ? scopeSelect.value : '5';
+
+    if (logBoxWrapper) logBoxWrapper.classList.add('scanning-active');
 
     btn.disabled = true;
-    btn.textContent = 'Scanning Top 5...';
-    status.textContent = 'Status: Evaluating emails';
+    if (scopeSelect) scopeSelect.disabled = true;
+    btn.textContent = 'Scanning...';
+    status.textContent = 'Evaluating';
     logBox.textContent = 'Connecting to Gmail...\n';
 
-    const es = new EventSource('/api/scan-stream');
+    const es = new EventSource(`/api/scan-stream?scope=${encodeURIComponent(scope)}&sort=${encodeURIComponent(currentSortMode)}`);
 
     es.onmessage = function(e) {
       const data = JSON.parse(e.data);
@@ -849,7 +1486,9 @@
         logBox.scrollTop = logBox.scrollHeight;
         es.close();
         finish(true);
-        renderAll(data.todos || [], data.consequence_alert);
+        cachedTodos = data.todos || [];
+        cachedAlert = data.consequence_alert;
+        renderCurrentTodos();
       }
     };
 
@@ -862,64 +1501,96 @@
   function finish(ok) {
     isScanning = false;
     const btn = document.getElementById('scanBtn');
+    const scopeSelect = document.getElementById('scanScope');
+    const logBoxWrapper = document.getElementById('logBoxWrapper');
     const status = document.getElementById('statusText');
+
+    if (logBoxWrapper) logBoxWrapper.classList.remove('scanning-active');
+
     btn.disabled = false;
-    btn.textContent = 'What Am I Forgetting?';
-    status.textContent = ok ? 'Status: Complete' : 'Status: Ready';
+    if (scopeSelect) scopeSelect.disabled = false;
+    btn.textContent = 'Scan Inbox';
+    status.textContent = ok ? 'Complete' : 'Ready';
   }
 
   async function markDone(id) {
-    const res = await fetch(`/api/todos/${id}/complete`, { method: 'POST' });
+    const res = await fetch(`/api/todos/${id}/complete?sort=${currentSortMode}`, { method: 'POST' });
     const data = await res.json();
-    renderAll(data.todos || [], data.consequence_alert);
+    cachedTodos = data.todos || [];
+    cachedAlert = data.consequence_alert;
+    renderCurrentTodos();
   }
 
   async function skipItem(id) {
-    const res = await fetch(`/api/todos/${id}/skip`, { method: 'POST' });
+    const res = await fetch(`/api/todos/${id}/skip?sort=${currentSortMode}`, { method: 'POST' });
     const data = await res.json();
-    renderAll(data.todos || [], data.consequence_alert);
+    cachedTodos = data.todos || [];
+    cachedAlert = data.consequence_alert;
+    renderCurrentTodos();
   }
 
   async function deleteTask(id) {
     if (!confirm('Delete this task?')) return;
-    const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/todos/${id}?sort=${currentSortMode}`, { method: 'DELETE' });
     const data = await res.json();
-    renderAll(data.todos || [], data.consequence_alert);
+    cachedTodos = data.todos || [];
+    cachedAlert = data.consequence_alert;
+    renderCurrentTodos();
   }
 
-  async function addManualTask() {
+  async function resetScanHistory() {
+    if (!confirm('Clear scan cache to re-evaluate inbox emails? (This allows previously scanned demo emails to be re-scanned)')) return;
+    try {
+      const res = await fetch('/api/rescan-reset?clear_todos=true', { method: 'POST' });
+      const data = await res.json();
+      cachedTodos = data.todos || [];
+      cachedAlert = data.consequence_alert;
+      renderCurrentTodos();
+      const logBox = document.getElementById('logBox');
+      if (logBox) logBox.textContent = 'Scan cache and email tasks reset. Ready to scan fresh.\n';
+      const status = document.getElementById('statusText');
+      if (status) status.textContent = 'Reset OK';
+    } catch (e) {
+      alert('Failed to reset: ' + e.message);
+    }
+  }
+
+  async function submitManualTask() {
     const actionInput = document.getElementById('manualAction');
     const dateInput = document.getElementById('manualDate');
-    const catInput = document.getElementById('manualCategory');
 
     const action = actionInput.value.trim();
     if (!action) return;
 
     const date_time = dateInput.value.trim();
-    const category = catInput.value;
 
     try {
-      const res = await fetch('/api/todos/manual', {
+      const res = await fetch(`/api/todos/manual?sort=${currentSortMode}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, date_time, category })
+        body: JSON.stringify({ action, date_time })
       });
       const data = await res.json();
       actionInput.value = '';
       dateInput.value = '';
-      renderAll(data.todos || [], data.consequence_alert);
+      closeAddTaskPanel();
+      cachedTodos = data.todos || [];
+      cachedAlert = data.consequence_alert;
+      renderCurrentTodos();
     } catch (e) {
       alert('Failed to add task: ' + e.message);
     }
   }
 
-  // --- See Mails Feature ---
+  // --- Messages Tab Feature ---
   async function loadEmails() {
     const container = document.getElementById('emailContainer');
-    container.innerHTML = '<div class="empty-state">Loading your inbox messages...</div>';
+    container.innerHTML = '<div class="empty-state">Loading messages...</div>';
+    const scopeSelect = document.getElementById('messagesScope');
+    const scope = scopeSelect ? scopeSelect.value : '12';
 
     try {
-      const res = await fetch('/api/emails?limit=12');
+      const res = await fetch(`/api/emails?scope=${encodeURIComponent(scope)}`);
       const data = await res.json();
       cachedEmails = data.emails || [];
       renderEmails(cachedEmails);
@@ -933,7 +1604,7 @@
     container.innerHTML = '';
 
     if (emails.length === 0) {
-      container.innerHTML = '<div class="empty-state">No recent emails found in your inbox.</div>';
+      container.innerHTML = '<div class="empty-state">No recent messages found.</div>';
       return;
     }
 
@@ -956,21 +1627,21 @@
             ${escapeHtml(mail.snippet)}
           </div>
 
-          <!-- Summary Box (Populated on click) -->
+          <!-- Summary Box -->
           <div id="summary-${mail.id}" class="summary-card"></div>
 
-          <!-- Full Body Viewer (Toggled on click) -->
+          <!-- Full Body Viewer -->
           <div id="body-${mail.id}" class="email-full-body">${escapeHtml(mail.body)}</div>
 
-          <div class="meta-bar">
-            <a href="${mail.gmail_link}" target="_blank" class="source-link">Open in Gmail ↗</a>
+          <div class="meta-bar" style="margin-top: 8px;">
+            <a href="${mail.gmail_link}" target="_blank" class="source-link">Open in Gmail</a>
 
             <div style="margin-left: auto; display: flex; gap: 6px;">
               <button class="btn-action btn-summary" onclick="summarizeEmail('${mail.id}')">
-                ✨ Summarize
+                Summarize
               </button>
               <button id="toggleBtn-${mail.id}" class="btn-action" onclick="toggleReadEmail('${mail.id}')">
-                Read Email
+                Read
               </button>
             </div>
           </div>
@@ -987,7 +1658,7 @@
     const isVisible = bodyBox.style.display === 'block';
 
     bodyBox.style.display = isVisible ? 'none' : 'block';
-    btn.textContent = isVisible ? 'Read Email' : 'Collapse';
+    btn.textContent = isVisible ? 'Read' : 'Collapse';
   }
 
   async function summarizeEmail(id) {
@@ -996,7 +1667,7 @@
     if (!email) return;
 
     summaryBox.style.display = 'block';
-    summaryBox.innerHTML = '<div class="summary-title">Generating summary with AI...</div>';
+    summaryBox.innerHTML = '<div class="summary-title">Generating summary...</div>';
 
     try {
       const res = await fetch('/api/emails/summarize', {
@@ -1015,12 +1686,12 @@
         : '';
 
       summaryBox.innerHTML = `
-        <div class="summary-title">📌 Summary (AI Generated):</div>
+        <div class="summary-title">Summary:</div>
         <div>${escapeHtml(data.summary)}</div>
         ${pointsHtml}
       `;
     } catch (e) {
-      summaryBox.innerHTML = `<div class="summary-title" style="color: #ef4444;">Error generating summary: ${e.message}</div>`;
+      summaryBox.innerHTML = `<div class="summary-title" style="color: #f87171;">Error: ${e.message}</div>`;
     }
   }
 

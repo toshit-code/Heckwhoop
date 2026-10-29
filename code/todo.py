@@ -29,19 +29,23 @@ Actionable items include:
 - Submissions, registrations, forms to fill, contests, or project deadlines
 - Meeting/interview dates or events the user needs to attend
 - Payment due dates, fee deadlines, or expiration dates
+- Homework, academic assignments, or project submissions
 
 Exclusions (is_actionable: false):
 - Pure receipts for already completed purchases
 - One-time passwords (OTP), 2FA codes, automated security login alerts
 - Generic social media conversation activity notifications (e.g. Slack digests) unless calling out an explicit personal task
 
+DATE RESOLUTION:
+When relative dates are mentioned (e.g. "tomorrow", "next Wednesday", "by this Friday"), calculate and output the exact calendar date (YYYY-MM-DD) for "deadline_date" based on Today's Reference Date provided.
+
 Return valid JSON without markdown:
 {
   "is_actionable": true | false,
-  "action": "clear, concise task description (e.g. Submit project before deadline)",
+  "action": "clear, concise task description",
   "deadline_phrase": "exact phrase from email like 'by October 31' or null",
   "deadline_date": "YYYY-MM-DD or null",
-  "category": "work | project | finance | academic | event | personal",
+  "category": "academic | work | project | finance | event | personal",
   "consequence_if_ignored": "impact if missed, or null",
   "source_quote": "relevant sentence from email"
 }
@@ -68,14 +72,14 @@ def get_gmail_service():
             creds.refresh(Request())
         else:
             print("\n" + "=" * 60)
-            print("🔑 Starting Gmail Authentication...")
+            print("Starting Gmail Authentication...")
             print("Please log in with your Google account when prompted.")
             print("=" * 60 + "\n")
             flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
             creds = flow.run_local_server(port=0, open_browser=True)
         with open(TOKEN_FILE, "w") as token:
             token.write(creds.to_json())
-        print(f"✅ Credentials saved to {TOKEN_FILE}!\n")
+        print(f"Credentials saved to {TOKEN_FILE}\n")
 
     return build("gmail", "v1", credentials=creds)
 
@@ -110,8 +114,12 @@ def parse_json_safely(text):
     return None
 
 
-def extract_action_with_gemini(subject, sender, body):
-    user_prompt = f"Subject: {subject}\nFrom: {sender}\nBody:\n{body[:3500]}"
+def extract_action_with_gemini(subject, sender, body, email_date=None):
+    now_str = datetime.now().strftime("%A, %B %d, %Y (%Y-%m-%d)")
+    date_context = f"Today's Reference Date: {now_str}"
+    if email_date:
+        date_context += f"\nEmail Received Date: {email_date}"
+    user_prompt = f"{date_context}\nSubject: {subject}\nFrom: {sender}\nBody:\n{body[:3500]}"
     api_key = os.getenv("GEMINI_API_KEY")
 
     if api_key:
@@ -166,21 +174,26 @@ def extract_action_with_gemini(subject, sender, body):
 def update_todo_markdown(todos):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
     lines = [
-        "# 📬 Gmail Actionable To-Do List",
-        f"> *Last synced: {now_str} via Google Gemini 3.8 Flash*",
+        "# Gmail Actionable To-Do List",
+        f"> Last synced: {now_str} via Google Gemini 3.8 Flash",
         "",
         "## Pending Tasks",
         ""
     ]
 
-    if not todos:
-        lines.append("- *No pending actionable tasks found in recent emails.*")
+    sorted_todos = sorted(
+        todos,
+        key=lambda t: t.get('deadline_date') or '9999-99-99'
+    )
+
+    if not sorted_todos:
+        lines.append("- No pending actionable tasks found in recent emails.")
     else:
-        for t in todos:
+        for t in sorted_todos:
             due = f" **(Due: {t.get('deadline_date') or t.get('deadline_phrase')})**" if t.get('deadline_date') or t.get('deadline_phrase') else ""
-            consequence = f"\n  > ⚠️ *Impact:* {t['consequence_if_ignored']}" if t.get('consequence_if_ignored') else ""
-            link = f"\n  > 🔗 [Open Email in Gmail]({t['gmail_link']})" if t.get('gmail_link') else ""
-            lines.append(f"- [ ] **{t['action']}** [{t['category'].upper()}]{due}{consequence}{link}\n")
+            consequence = f"\n  > Impact: {t['consequence_if_ignored']}" if t.get('consequence_if_ignored') else ""
+            link = f"\n  > [Open Email]({t['gmail_link']})" if t.get('gmail_link') else ""
+            lines.append(f"- [ ] **{t['action']}** [{t.get('category', 'personal').upper()}]{due}{consequence}{link}\n")
 
     with open(TODO_MD_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
@@ -195,14 +208,14 @@ def main():
             pass
 
     print("\n" + "=" * 60)
-    print("🚀 GMAIL INBOX TO-DO LIST (Gemini 3.8 Flash)")
+    print("GMAIL INBOX TO-DO LIST (Gemini 3.8 Flash)")
     print("=" * 60)
-    print(f"📥 Scanning last {max_emails} emails from your inbox...\n")
+    print(f"Scanning last {max_emails} emails from your inbox...\n")
 
     try:
         service = get_gmail_service()
     except Exception as e:
-        print(f"❌ Failed to connect to Gmail: {e}")
+        print(f"Failed to connect to Gmail: {e}")
         return
 
     query = "newer_than:14d -category:promotions -category:social -category:forums"
@@ -224,7 +237,6 @@ def main():
         body = get_email_body(msg)
         gmail_link = f"https://mail.google.com/mail/u/0/#inbox/{msg_id}"
 
-        # Clean snippet if body empty
         if not body.strip():
             body = msg.get("snippet", "")
 
@@ -235,32 +247,31 @@ def main():
             analysis["source_sender"] = sender
             analysis["gmail_link"] = gmail_link
             extracted_todos.append(analysis)
-            print(f"[{idx}/{len(messages)}] 🎯 TASK FOUND: {analysis['action']}")
+            print(f"[{idx}/{len(messages)}] TASK: {analysis['action']}")
             if analysis.get("deadline_date"):
-                print(f"       📅 Due: {analysis['deadline_date']}")
+                print(f"       Due: {analysis['deadline_date']}")
             if analysis.get("consequence_if_ignored"):
-                print(f"       ⚠️  Impact: {analysis['consequence_if_ignored']}")
+                print(f"       Impact: {analysis['consequence_if_ignored']}")
             print()
         else:
-            print(f"[{idx}/{len(messages)}] ⏭️  Skipped: {subject[:45]}...")
+            print(f"[{idx}/{len(messages)}] Skipped: {subject[:45]}...")
 
     print("\n" + "=" * 60)
-    print(f"✨ SUMMARY: Found {len(extracted_todos)} Actionable To-Do Items")
+    print(f"Found {len(extracted_todos)} Actionable Items")
     print("=" * 60)
 
     if extracted_todos:
         for i, t in enumerate(extracted_todos, 1):
             deadline_str = f" [Due: {t.get('deadline_date') or t.get('deadline_phrase')}]" if (t.get('deadline_date') or t.get('deadline_phrase')) else ""
-            print(f"\n{i}. 📌 {t['action']}{deadline_str}")
-            print(f"   Category: {t.get('category', 'personal').upper()}")
+            print(f"\n{i}. {t['action']}{deadline_str} [{t.get('category', 'personal').upper()}]")
             if t.get("consequence_if_ignored"):
-                print(f"   Consequence: {t['consequence_if_ignored']}")
+                print(f"   Impact: {t['consequence_if_ignored']}")
             print(f"   Link: {t['gmail_link']}")
     else:
-        print("Your inbox is clear! No urgent pending tasks detected.")
+        print("Inbox clear. No pending tasks detected.")
 
     update_todo_markdown(extracted_todos)
-    print(f"\n📝 Saved formatted checklist to: {TODO_MD_FILE}\n")
+    print(f"\nSaved checklist to: {TODO_MD_FILE}\n")
 
 
 if __name__ == "__main__":

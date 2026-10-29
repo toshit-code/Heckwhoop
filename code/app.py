@@ -80,7 +80,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-init_db()
+    recalculate_priorities()
 
 # --- Gmail Service ---
 def get_gmail_service():
@@ -120,63 +120,66 @@ def get_email_body(msg):
     return ""
 
 # --- LLM Prompts ---
-EXTRACTION_PROMPT = """You are an email assistant for LIFELOCKER. Your goal is to extract personal to-dos, required forms, deadlines, appointments, and actionable opportunities from emails.
+EXTRACTION_PROMPT = """You are an email assistant for LIFELOCKER. Extract personal to-dos, required forms, deadlines, appointments, and actionable opportunities from emails.
 
 WHAT QUALIFIES AS ACTIONABLE (Set is_actionable: true):
-1. Hackathons, Buildathons, Grants & Contests:
-   - Requesting API credits, cloud tokens, or project sponsorships (e.g. fill Google form for credits)
-   - Project submissions, demo filings, team registrations, deadline reminders
-2. Required Forms & Applications:
+1. Hackathons, Grants, Contests & Projects:
+   - Requesting API credits, cloud tokens, submissions, registrations, deadline reminders
+2. Forms, Applications & Surveys:
    - Any email asking the user to fill out a Google Form, survey, application, or RSVP
 3. Appointments & Schedule:
    - Dentist, doctor visits, interviews, team/client meetings with date or time
-4. Travel & Bookings:
+4. School & Academic:
+   - Homework, classroom assignments, project submissions, exam notices
+5. Travel & Bookings:
    - Flights, train/hotel reservations, passport/visa renewal deadlines
-5. Real Deadlines & Dues:
-   - Submissions, bills/invoices to pay, exam clearances, tuition/fee dues, contract signings
+6. Deadlines & Payments:
+   - Invoices to pay, fee dues, contract signings, submission cutoffs
 
 STRICT EXCLUSIONS (Set is_actionable: false):
-- Pure commercial advertising & sales discounts (e.g. "Get 50% off summer collection", "Upgrade your ChatGPT Plus subscription")
+- Pure commercial advertising & sales discounts
 - Routine SaaS product update announcements or automated Slack digests unless specifically requesting personal action
 - Automated one-time passwords (OTP), 2FA codes, login security alerts
 - Purchase receipts for transactions already completed
 
-CRITICAL: If an email mentions filling a form to get credits for a hackathon, submitting a project, or attending an appointment, ALWAYS mark is_actionable: true.
-
 ACTIONABLE LINKS:
-If the email contains an actionable web link directly related to completing the task (such as a Google Form, billing/payment website, portal submission, registration, or appointment confirmation URL):
+If the email contains an actionable web link directly related to completing the task (such as a Google Form, payment portal, submission URL):
 - Extract the exact URL as "action_url" (or null if none)
-- Provide a concise, action-oriented button label as "action_url_text" (e.g. "Pay Now", "Fill Form", "Submit Project", "Confirm Slot", "More Info", etc., or null if none)
+- Provide a concise button label as "action_url_text" (e.g. "Pay Now", "Fill Form", "Submit Project", or null if none)
+
+DATE RESOLUTION RULES:
+- When the email mentions relative expressions like "tomorrow", "next Wednesday", "this Friday", "by next Monday":
+  Calculate the exact calendar date (YYYY-MM-DD) based on Today's Reference Date provided.
+- "sort_date": ISO formatted date string ("YYYY-MM-DD" or "YYYY-MM-DDTHH:MM" if time is given).
+- "date_time": Clear human-readable date and time (e.g. "Wed, Nov 4, 2026 at 2:30 PM" or "Tomorrow, Oct 29, 2026").
 
 Return valid JSON without markdown:
 {
   "is_actionable": true | false,
-  "action": "clear, concise task description (e.g. Fill form to request Buildathon credits, Dentist Appointment)",
+  "action": "clear concise task description",
   "action_url": "https://... or null",
-  "action_url_text": "short action text e.g. Pay Now, Fill Form, Confirm Slot or null",
-  "date_time": "human readable date and time (e.g. by October 31, or Wednesday at 11:00 AM) or null",
-  "sort_date": "YYYY-MM-DD or YYYY-MM-DDTHH:MM if time mentioned for chronological sorting, else null",
-  "category": "hackathon | project | health | travel | legal | academic | work | finance | personal",
-  "consequence": "specific real-world impact if missed or ignored",
+  "action_url_text": "short action text or null",
+  "date_time": "human readable date and time or null",
+  "sort_date": "YYYY-MM-DD or YYYY-MM-DDTHH:MM if time mentioned, else null",
+  "category": "academic | hackathon | project | health | travel | legal | work | finance | personal",
+  "consequence": "specific real-world impact if missed or ignored, or null",
   "source_quote": "relevant sentence from email"
 }
 """
 
 CONSEQUENCE_REASONING_PROMPT = """You are LIFELOCKER's consequence-reasoning intelligence.
-Analyze the user's active tasks across their inbox emails AND custom user-created tasks.
+Analyze the user's active tasks across their emails and custom tasks.
 Find HIDDEN CONFLICTS, CROSS-TASK PREREQUISITES, and DEPENDENCIES.
 
 Example Patterns:
-- Flight trip confirmed (e.g. Flight to USA in July) + Passport expiring or renewal needed ->
-  Renewing passport MUST be elevated to TOP PRIORITY because renewal takes 4-8 weeks processing time. If not renewed in advance, the user CANNOT board the flight to USA!
-- User manual task: 'Apply for Japan Tourist Visa' + Email flight booking: 'Flight to Tokyo on Feb 8' + Email reminder: 'Passport expires March 2027' ->
-  Passport renewal must happen first before visa can be issued.
+- Flight trip confirmed + Passport expiring -> Renewing passport must be top priority because renewal takes weeks.
+- User task 'Apply for Visa' + Flight booking -> Passport renewal must happen first before visa can be issued.
 - Overdue bill + manual expense task -> Prioritize paying bill before cutoff/penalty.
 
 Return valid JSON:
 {
   "has_conflict": true | false,
-  "alert_title": "short urgent warning (e.g. Renew Passport before USA flight) or null",
+  "alert_title": "short urgent warning or null",
   "alert_explanation": "one clear sentence detailing the real-world consequence chain or null",
   "top_priority_action": "exact task name that must be done first or null"
 }
@@ -248,16 +251,95 @@ def call_llm_json(system_prompt, user_prompt):
 
     return {}
 
-def extract_with_llm(subject, sender, body):
-    # Immediate skip for automated security alerts and OTPs
+def ensure_resolved_date(res, ref_dt=None):
+    if not ref_dt:
+        ref_dt = datetime.now()
+
+    sort_date = res.get("sort_date")
+    date_time = res.get("date_time") or ""
+
+    is_valid_sort = bool(sort_date and re.match(r"^\d{4}-\d{2}-\d{2}", str(sort_date)) and not str(sort_date).startswith("9999"))
+
+    dt_lower = date_time.lower().strip()
+    from datetime import timedelta
+    target_date = None
+
+    if not is_valid_sort:
+        if "tomorrow" in dt_lower:
+            target_date = ref_dt + timedelta(days=1)
+        elif "today" in dt_lower:
+            target_date = ref_dt
+        elif "yesterday" in dt_lower:
+            target_date = ref_dt - timedelta(days=1)
+        else:
+            weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+            for idx, day in enumerate(weekdays):
+                if day in dt_lower:
+                    current_weekday = ref_dt.weekday()
+                    days_ahead = idx - current_weekday
+                    if "next" in dt_lower:
+                        if days_ahead <= 0:
+                            days_ahead += 7
+                    else:
+                        if days_ahead <= 0:
+                            days_ahead += 7
+                    target_date = ref_dt + timedelta(days=days_ahead)
+                    break
+
+        if target_date:
+            time_match = re.search(r"\b(\d{1,2})(?::(\d{2}))?\s*(am|pm|AM|PM)\b", date_time)
+            if time_match:
+                hr = int(time_match.group(1))
+                mn = int(time_match.group(2) or 0)
+                ampm = time_match.group(3).lower()
+                if ampm == "pm" and hr < 12:
+                    hr += 12
+                elif ampm == "am" and hr == 12:
+                    hr = 0
+                res["sort_date"] = f"{target_date.strftime('%Y-%m-%d')}T{hr:02d}:{mn:02d}"
+            else:
+                res["sort_date"] = target_date.strftime("%Y-%m-%d")
+
+    # Format date_time into a clean, human-readable calculated calendar date
+    final_sort = res.get("sort_date")
+    if final_sort and not final_sort.startswith("9999"):
+        has_relative = any(w in dt_lower for w in ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "tomorrow", "today", "yesterday", "next"])
+        if has_relative or not date_time:
+            time_part = ""
+            time_match = re.search(r"\b(\d{1,2}(?::\d{2})?\s*(?:am|pm|AM|PM))\b", date_time)
+            if time_match:
+                time_part = f" at {time_match.group(1).upper()}"
+            elif "T" in final_sort:
+                try:
+                    t_hr_mn = datetime.strptime(final_sort[:16], "%Y-%m-%dT%H:%M").strftime("%I:%M %p").lstrip("0")
+                    time_part = f" at {t_hr_mn}"
+                except Exception:
+                    pass
+
+            try:
+                base_d = datetime.strptime(final_sort[:10], "%Y-%m-%d")
+                res["date_time"] = base_d.strftime(f"%a, %b %d, %Y{time_part}")
+            except Exception:
+                pass
+
+    return res
+
+def extract_with_llm(subject, sender, body, email_date=None):
     lower_subj = subject.lower()
     lower_sender = sender.lower()
     if "security alert" in lower_subj or "no-reply@accounts.google.com" in lower_sender:
         return {"is_actionable": False}
 
-    user_prompt = f"Subject: {subject}\nFrom: {sender}\nBody:\n{body[:3500]}"
+    now = datetime.now()
+    now_str = now.strftime("%A, %B %d, %Y (%Y-%m-%d)")
+    date_context = f"Today's Reference Date: {now_str}"
+    if email_date:
+        date_context += f"\nEmail Received Date: {email_date}"
+
+    user_prompt = f"{date_context}\nSubject: {subject}\nFrom: {sender}\nBody:\n{body[:3500]}"
     res = call_llm_json(EXTRACTION_PROMPT, user_prompt)
     if res.get("is_actionable"):
+        res = ensure_resolved_date(res, now)
         return res
     return {"is_actionable": False}
 
@@ -284,10 +366,6 @@ def is_already_scanned(msg_id):
     c = conn.cursor()
     c.execute("SELECT 1 FROM scanned_messages WHERE msg_id = ?", (msg_id,))
     scanned = c.fetchone() is not None
-    if not scanned:
-        # Also check if it exists in todos by msg_id or gmail_link
-        c.execute("SELECT 1 FROM todos WHERE msg_id = ? OR gmail_link LIKE ?", (msg_id, f"%{msg_id}%"))
-        scanned = c.fetchone() is not None
     conn.close()
     return scanned
 
@@ -303,13 +381,71 @@ def record_scanned(msg_id, subject, result):
     conn.commit()
     conn.close()
 
+def recalculate_priorities():
+    """
+    Standard priority recalculation based on actual urgency and deadline:
+    - Consequence alert conflict items: Priority 1
+    - Overdue or due today: Priority 2
+    - Due within 2 days: Priority 3
+    - Due within 5 days: Priority 4
+    - Other dated items: Priority 5
+    - Undated items: Priority 10
+    """
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+
+    alert = get_consequence_alert()
+    top_conflict = (alert.get("top_priority_action") or "").lower() if alert and alert.get("has_conflict") else ""
+    now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    c.execute("SELECT id, action, date_time, sort_date, category, consequence, source_subject, source_quote, status FROM todos")
+    rows = c.fetchall()
+
+    for r in rows:
+        todo_id, action, date_time, sort_date, category, consequence, subject, quote, status = r
+        if status in ('done', 'skipped'):
+            continue
+
+        if top_conflict:
+            tc_clean = top_conflict.strip().lower()
+            act_clean = (action or "").strip().lower()
+            tc_words = set(re.findall(r"\w+", tc_clean))
+            act_words = set(re.findall(r"\w+", act_clean))
+            common = tc_words.intersection(act_words) - {"the", "a", "an", "for", "to", "and", "or", "in", "on", "before", "after", "by", "with"}
+            if tc_clean in act_clean or act_clean in tc_clean or len(common) >= 2:
+                c.execute("UPDATE todos SET priority = 1 WHERE id = ?", (todo_id,))
+                continue
+
+        priority = 10
+        if sort_date and sort_date != '9999-99-99':
+            try:
+                item_date = sort_date[:10]
+                if item_date <= now_date:
+                    priority = 2
+                else:
+                    d1 = datetime.strptime(now_date, "%Y-%m-%d")
+                    d2 = datetime.strptime(item_date, "%Y-%m-%d")
+                    diff = (d2 - d1).days
+                    if diff <= 2:
+                        priority = 3
+                    elif diff <= 5:
+                        priority = 4
+                    else:
+                        priority = 5
+            except Exception:
+                priority = 10
+
+        c.execute("UPDATE todos SET priority = ? WHERE id = ?", (priority, todo_id))
+
+    conn.commit()
+    conn.close()
+
 def store_todo(item):
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     msg_id = item.get('msg_id', '')
     gmail_link = item.get('gmail_link', '')
 
-    # Check if this email was already stored as a todo
     if msg_id:
         c.execute("SELECT id FROM todos WHERE msg_id = ?", (msg_id,))
     elif gmail_link:
@@ -318,6 +454,10 @@ def store_todo(item):
         c.execute("SELECT id FROM todos WHERE action = ? AND source_type = 'manual'", (item['action'],))
     existing = c.fetchone()
 
+    category = item.get('category', 'personal')
+    consequence = item.get('consequence', '')
+    priority = item.get('priority', 10)
+
     if existing is None:
         c.execute("""
             INSERT INTO todos (
@@ -325,14 +465,14 @@ def store_todo(item):
                 source_subject, source_sender, source_quote, gmail_link,
                 action_url, action_url_text, source_type, priority, status, created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 10, 'open', ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
         """, (
             msg_id,
             item['action'],
             item.get('date_time') or item.get('deadline_phrase') or '',
             item.get('sort_date') or item.get('deadline_date') or '9999-99-99',
-            item.get('category', 'personal'),
-            item.get('consequence', ''),
+            category,
+            consequence,
             item.get('source_subject', ''),
             item.get('source_sender', ''),
             item.get('source_quote', ''),
@@ -340,23 +480,45 @@ def store_todo(item):
             item.get('action_url') or None,
             item.get('action_url_text') or None,
             item.get('source_type', 'email'),
+            priority,
             datetime.now(timezone.utc).isoformat()
         ))
         conn.commit()
+    else:
+        todo_id = existing[0]
+        c.execute("""
+            UPDATE todos SET
+                action = ?,
+                date_time = ?,
+                sort_date = ?,
+                category = ?,
+                consequence = ?,
+                action_url = ?,
+                action_url_text = ?
+            WHERE id = ?
+        """, (
+            item['action'],
+            item.get('date_time') or item.get('deadline_phrase') or '',
+            item.get('sort_date') or item.get('deadline_date') or '9999-99-99',
+            category,
+            consequence,
+            item.get('action_url') or None,
+            item.get('action_url_text') or None,
+            todo_id
+        ))
+        conn.commit()
     conn.close()
+
+    recalculate_priorities()
 
 def save_consequence_alert(alert):
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute("INSERT OR REPLACE INTO system_state (key, value) VALUES ('consequence_alert', ?)", (json.dumps(alert),))
-    # Reset priorities to default 10 for open tasks first if no conflict or updating
-    if not alert.get("has_conflict"):
-        c.execute("UPDATE todos SET priority = 10 WHERE priority = 1")
-    elif alert.get("top_priority_action"):
-        top_name = alert["top_priority_action"]
-        c.execute("UPDATE todos SET priority = 1 WHERE action LIKE ? AND status = 'open'", (f"%{top_name}%",))
     conn.commit()
     conn.close()
+
+    recalculate_priorities()
 
 def get_consequence_alert():
     conn = sqlite3.connect(DB_FILE)
@@ -371,19 +533,32 @@ def get_consequence_alert():
             pass
     return None
 
-def get_todos():
+def get_todos(sort_by="criticalness"):
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute("""
-        SELECT id, action, date_time, sort_date, category, consequence, source_subject, source_sender, source_quote, gmail_link, priority, status, action_url, action_url_text, source_type
-        FROM todos
-        WHERE status != 'skipped'
-        ORDER BY
+
+    if sort_by == "time":
+        order_by = """
+            status ASC,
+            CASE WHEN sort_date IS NULL OR sort_date = '' OR sort_date = '9999-99-99' THEN 1 ELSE 0 END ASC,
+            sort_date ASC,
+            priority ASC,
+            id DESC
+        """
+    else:  # criticalness (default)
+        order_by = """
             status ASC,
             priority ASC,
             CASE WHEN sort_date IS NULL OR sort_date = '' OR sort_date = '9999-99-99' THEN 1 ELSE 0 END ASC,
             sort_date ASC,
             id DESC
+        """
+
+    c.execute(f"""
+        SELECT id, action, date_time, sort_date, category, consequence, source_subject, source_sender, source_quote, gmail_link, priority, status, action_url, action_url_text, source_type
+        FROM todos
+        WHERE status != 'skipped'
+        ORDER BY {order_by}
     """)
     rows = c.fetchall()
     conn.close()
@@ -406,7 +581,7 @@ def get_todos():
     } for r in rows]
 
 def refresh_consequence_state():
-    """Re-evaluates consequence reasoning for only open (unfinished) tasks (both email and user custom tasks)."""
+    """Re-evaluates consequence reasoning for open tasks."""
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute("""
@@ -415,6 +590,8 @@ def refresh_consequence_state():
         WHERE status = 'open'
     """)
     open_rows = c.fetchall()
+    conn.close()
+
     open_items = [{
         "id": r[0],
         "action": r[1],
@@ -425,12 +602,12 @@ def refresh_consequence_state():
     } for r in open_rows]
 
     if len(open_items) < 2:
-        # Less than 2 open tasks -> clear the conflict banner
         save_consequence_alert({"has_conflict": False, "alert_title": None, "alert_explanation": None, "top_priority_action": None})
     else:
-        # Re-run consequence analysis on remaining open items
         new_alert = run_consequence_analysis(open_items)
         save_consequence_alert(new_alert)
+
+    recalculate_priorities()
 
 # --- Flask Routes ---
 @app.route("/")
@@ -440,8 +617,9 @@ def home():
 
 @app.route("/api/todos")
 def api_get_todos():
+    sort_by = request.args.get("sort", "criticalness")
     return jsonify({
-        "todos": get_todos(),
+        "todos": get_todos(sort_by=sort_by),
         "consequence_alert": get_consequence_alert()
     })
 
@@ -456,10 +634,11 @@ def api_complete_todo(todo_id):
     conn.commit()
     conn.close()
 
-    # Re-evaluate consequence alert for remaining open tasks
     refresh_consequence_state()
+    recalculate_priorities()
 
-    return jsonify({"ok": True, "todos": get_todos(), "consequence_alert": get_consequence_alert()})
+    sort_by = request.args.get("sort", "criticalness")
+    return jsonify({"ok": True, "todos": get_todos(sort_by=sort_by), "consequence_alert": get_consequence_alert()})
 
 @app.route("/api/todos/<int:todo_id>/skip", methods=["POST"])
 def api_skip_todo(todo_id):
@@ -468,10 +647,11 @@ def api_skip_todo(todo_id):
     conn.commit()
     conn.close()
 
-    # Re-evaluate consequence alert for remaining open tasks
     refresh_consequence_state()
+    recalculate_priorities()
 
-    return jsonify({"ok": True, "todos": get_todos(), "consequence_alert": get_consequence_alert()})
+    sort_by = request.args.get("sort", "criticalness")
+    return jsonify({"ok": True, "todos": get_todos(sort_by=sort_by), "consequence_alert": get_consequence_alert()})
 
 @app.route("/api/todos/<int:todo_id>", methods=["DELETE"])
 def api_delete_todo(todo_id):
@@ -481,7 +661,10 @@ def api_delete_todo(todo_id):
     conn.close()
 
     refresh_consequence_state()
-    return jsonify({"ok": True, "todos": get_todos(), "consequence_alert": get_consequence_alert()})
+    recalculate_priorities()
+
+    sort_by = request.args.get("sort", "criticalness")
+    return jsonify({"ok": True, "todos": get_todos(sort_by=sort_by), "consequence_alert": get_consequence_alert()})
 
 @app.route("/api/todos/manual", methods=["POST"])
 def api_add_manual_todo():
@@ -490,22 +673,26 @@ def api_add_manual_todo():
     if not action:
         return jsonify({"error": "Task description is required"}), 400
 
-    date_time = (data.get("date_time") or "").strip()
-    category = (data.get("category") or "personal").strip()
+    raw_date = (data.get("date_time") or "").strip()
 
     sort_date = "9999-99-99"
-    if date_time:
-        # Check for simple YYYY-MM-DD pattern
-        match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", date_time)
+    display_date = raw_date
+    if raw_date:
+        match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", raw_date)
         if match:
             sort_date = match.group(1)
+            try:
+                parsed_dt = datetime.strptime(sort_date, "%Y-%m-%d")
+                display_date = parsed_dt.strftime("%b %d, %Y")
+            except Exception:
+                display_date = sort_date
 
     item = {
         "action": action,
-        "date_time": date_time or None,
+        "date_time": display_date or None,
         "sort_date": sort_date,
-        "category": category,
-        "consequence": data.get("consequence", ""),
+        "category": (data.get("category") or "personal").strip(),
+        "consequence": "",
         "source_subject": "Personal To-Do",
         "source_sender": "User input",
         "source_quote": "",
@@ -516,18 +703,30 @@ def api_add_manual_todo():
     }
 
     store_todo(item)
+    recalculate_priorities()
     refresh_consequence_state()
 
-    return jsonify({"ok": True, "todos": get_todos(), "consequence_alert": get_consequence_alert()})
+    sort_by = request.args.get("sort", "criticalness")
+    return jsonify({"ok": True, "todos": get_todos(sort_by=sort_by), "consequence_alert": get_consequence_alert()})
 
 @app.route("/api/rescan-reset", methods=["POST"])
 def api_rescan_reset():
+    clear_todos = request.args.get("clear_todos", "false").lower() == "true"
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute("DELETE FROM scanned_messages")
+    if clear_todos:
+        c.execute("DELETE FROM todos WHERE source_type = 'email'")
+        c.execute("DELETE FROM system_state WHERE key = 'consequence_alert'")
     conn.commit()
     conn.close()
-    return jsonify({"ok": True, "message": "Scanned message history cleared"})
+    recalculate_priorities()
+    return jsonify({
+        "ok": True,
+        "message": "Scanned message history cleared" + (" and email tasks reset" if clear_todos else ""),
+        "todos": get_todos(),
+        "consequence_alert": get_consequence_alert()
+    })
 
 # --- See Mails Endpoints ---
 @app.route("/api/emails")
@@ -537,8 +736,22 @@ def api_get_emails():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-    limit = int(request.args.get("limit", 12))
-    query = request.args.get("q", "newer_than:14d")
+    scope = request.args.get("scope", "").lower()
+    if scope == "today":
+        limit = 50
+        query = "newer_than:1d"
+    elif scope == "3d":
+        limit = 50
+        query = "newer_than:3d"
+    elif scope == "7d":
+        limit = 50
+        query = "newer_than:7d"
+    elif scope.isdigit():
+        limit = max(1, min(int(scope), 50))
+        query = request.args.get("q", "newer_than:14d")
+    else:
+        limit = int(request.args.get("limit", 12))
+        query = request.args.get("q", "newer_than:14d")
 
     try:
         res = service.users().messages().list(userId="me", q=query, maxResults=limit).execute()
@@ -580,7 +793,6 @@ def api_summarize_email():
     body = data.get("body", "")
 
     if not body.strip():
-        # If body is not in request, fetch from Gmail
         msg_id = data.get("id")
         if msg_id:
             try:
@@ -604,6 +816,29 @@ def api_summarize_email():
 # --- Realtime Scan Stream ---
 @app.route("/api/scan-stream")
 def api_scan_stream():
+    scope = request.args.get("scope", "5").lower()
+    sort_by = request.args.get("sort", "criticalness")
+
+    if scope == "today":
+        max_results = 50
+        query = "newer_than:1d -category:promotions -category:social -category:forums"
+        scope_label = "today's inbox messages"
+    elif scope == "3d":
+        max_results = 50
+        query = "newer_than:3d -category:promotions -category:social -category:forums"
+        scope_label = "messages from the past 3 days"
+    elif scope == "7d":
+        max_results = 50
+        query = "newer_than:7d -category:promotions -category:social -category:forums"
+        scope_label = "messages from the past 7 days"
+    else:
+        try:
+            max_results = max(1, min(int(scope), 50))
+        except ValueError:
+            max_results = 5
+        query = "newer_than:14d -category:promotions -category:social -category:forums"
+        scope_label = f"latest {max_results} messages"
+
     def generate():
         yield f"data: {json.dumps({'type': 'log', 'text': 'Connecting to Gmail...'})}\n\n"
         try:
@@ -612,16 +847,18 @@ def api_scan_stream():
             yield f"data: {json.dumps({'type': 'error', 'text': f'Gmail error: {e}'})}\n\n"
             return
 
-        yield f"data: {json.dumps({'type': 'log', 'text': 'Connected. Fetching top 5 inbox messages...'})}\n\n"
-        query = "newer_than:14d -category:promotions -category:social -category:forums"
+        yield f"data: {json.dumps({'type': 'log', 'text': f'Connected. Querying {scope_label}...'})}\n\n"
         try:
-            res = service.users().messages().list(userId="me", q=query, maxResults=5).execute()
+            res = service.users().messages().list(userId="me", q=query, maxResults=max_results).execute()
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'text': f'Failed to query emails: {e}'})}\n\n"
             return
 
         messages = res.get("messages", [])
-        yield f"data: {json.dumps({'type': 'log', 'text': f'Evaluating {len(messages)} recent messages (filtering ads & SaaS onboarding)...'})}\n\n"
+        if not messages:
+            yield f"data: {json.dumps({'type': 'log', 'text': f'No emails found matching {scope_label}.'})}\n\n"
+        else:
+            yield f"data: {json.dumps({'type': 'log', 'text': f'Evaluating {len(messages)} message(s)...'})}\n\n"
 
         found_count = 0
         new_evaluated_count = 0
@@ -636,19 +873,19 @@ def api_scan_stream():
             headers = msg.get("payload", {}).get("headers", [])
             subject = next((h["value"] for h in headers if h["name"].lower() == "subject"), "No Subject")
             sender = next((h["value"] for h in headers if h["name"].lower() == "from"), "Unknown")
+            date_str = next((h["value"] for h in headers if h["name"].lower() == "date"), "")
             body = get_email_body(msg) or msg.get("snippet", "")
             gmail_link = f"https://mail.google.com/mail/u/0/#inbox/{msg_id}"
 
-            # Check if already scanned / read
             if is_already_scanned(msg_id):
-                yield f"data: {json.dumps({'type': 'log', 'text': f'[{idx}/{len(messages)}] \"{subject[:35]}\" -> Already processed (skipping)'})}\n\n"
+                yield f"data: {json.dumps({'type': 'log', 'text': f'[{idx}/{len(messages)}] \"{subject[:35]}\" -> Already processed'})}\n\n"
                 continue
 
             new_evaluated_count += 1
-            yield f"data: {json.dumps({'type': 'log', 'text': f'[{idx}/{len(messages)}] Analyzing new email: \"{subject[:35]}\"...'})}\n\n"
+            yield f"data: {json.dumps({'type': 'log', 'text': f'[{idx}/{len(messages)}] Analyzing: \"{subject[:35]}\"...'})}\n\n"
 
             try:
-                parsed = extract_with_llm(subject, sender, body)
+                parsed = extract_with_llm(subject, sender, body, email_date=date_str)
                 if parsed.get("is_actionable") and parsed.get("action"):
                     parsed["msg_id"] = msg_id
                     parsed["source_subject"] = subject
@@ -659,17 +896,17 @@ def api_scan_stream():
                     found_count += 1
                     due_info = parsed.get("date_time") or parsed.get("sort_date") or "No deadline"
                     task_action = parsed.get("action")
-                    msg_text = f"    -> [SELECT] {task_action} ({due_info})"
+                    msg_text = f"    -> [TASK] {task_action} ({due_info})"
                     yield f"data: {json.dumps({'type': 'log', 'text': msg_text})}\n\n"
                 else:
                     record_scanned(msg_id, subject, "skipped")
-                    yield f"data: {json.dumps({'type': 'log', 'text': '    -> [SKIP] (marketing ad, routine setup, or non-actionable)'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'log', 'text': '    -> [SKIP] Non-actionable or marketing'})}\n\n"
             except Exception as item_err:
                 yield f"data: {json.dumps({'type': 'log', 'text': f'    -> [ERROR] Failed analyzing item: {item_err}'})}\n\n"
 
             time.sleep(0.05)
 
-        # Run Consequence Reasoning across all active (open) items (both email & custom tasks)
+        # Run Consequence Reasoning across active items
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
         c.execute("SELECT id, action, date_time, category, source_subject, source_type FROM todos WHERE status = 'open'")
@@ -684,18 +921,19 @@ def api_scan_stream():
         conn.close()
 
         if len(open_items) >= 2:
-            yield f"data: {json.dumps({'type': 'log', 'text': 'Running consequence reasoning for cross-email & custom task conflicts/dependencies...'})}\n\n"
+            yield f"data: {json.dumps({'type': 'log', 'text': 'Analyzing dependencies and upcoming conflicts...'})}\n\n"
             consequence_alert = run_consequence_analysis(open_items)
             if consequence_alert.get("has_conflict"):
                 save_consequence_alert(consequence_alert)
                 alert_title_txt = consequence_alert.get("alert_title", "")
-                yield f"data: {json.dumps({'type': 'log', 'text': f'    -> ⚠️ CONFLICT: {alert_title_txt}'})}\n\n"
+                yield f"data: {json.dumps({'type': 'log', 'text': f'    -> Conflict: {alert_title_txt}'})}\n\n"
             else:
                 save_consequence_alert({"has_conflict": False, "alert_title": None, "alert_explanation": None, "top_priority_action": None})
         else:
             save_consequence_alert({"has_conflict": False, "alert_title": None, "alert_explanation": None, "top_priority_action": None})
 
-        yield f"data: {json.dumps({'type': 'done', 'found_count': found_count, 'todos': get_todos(), 'consequence_alert': get_consequence_alert()})}\n\n"
+        recalculate_priorities()
+        yield f"data: {json.dumps({'type': 'done', 'found_count': found_count, 'todos': get_todos(sort_by=sort_by), 'consequence_alert': get_consequence_alert()})}\n\n"
 
     response = Response(generate(), mimetype="text/event-stream")
     response.headers["Cache-Control"] = "no-cache"
@@ -703,6 +941,7 @@ def api_scan_stream():
     return response
 
 if __name__ == "__main__":
+    init_db()
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
     print(f"\nLIFELOCKER running on http://127.0.0.1:{port}\n")
     app.run(host="0.0.0.0", port=port, debug=False)
